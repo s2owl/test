@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Data Editor</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #0056b3; }
+        form { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fafafa; }
+        form label { display: block; margin-bottom: 5px; font-weight: bold; }
+        form input[type="text"], form textarea, form input[type="file"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        form button { background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-right: 5px; }
+        form button:hover { background-color: #218838; }
+        .item { background-color: #e9ecef; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .item .details { flex-grow: 1; margin-right: 15px; }
+        .item .details h3 { margin: 0 0 5px 0; color: #343a40; }
+        .item .details p { margin: 0; font-size: 0.9em; color: #555; }
+        .item .actions button { background-color: #007bff; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+        .item .actions button:hover { background-color: #0056b3; }
+        .item .actions button.delete { background-color: #dc3545; }
+        .item .actions button.delete:hover { background-color: #c82333; }
+        .item .actions button.move { background-color: #ffc107; color: #333; }
+        .item .actions button.move:hover { background-color: #e0a800; }
+        .message { padding: 10px; margin-bottom: 20px; border-radius: 5px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .message.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .file-upload-section { margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; }
+        .file-upload-section button { background-color: #17a2b8; } /* Info blue for download/upload */
+        .file-upload-section button:hover { background-color: #138496; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON Data Editor</h1>
+
+        <% if (message) { %>
+            <div class="message <%= message.includes('Error') || message.includes('No file') || message.includes('Invalid') ? 'error' : '' %>">
+                <%= message %>
+            </div>
+        <% } %>
+
+        <h2>Add New Item</h2>
+        <form action="/add" method="POST">
+            <label for="newTitle">Title:</label>
+            <input type="text" id="newTitle" name="title" required>
+
+            <label for="newDescription">Description:</label>
+            <textarea id="newDescription" name="description"></textarea>
+
+            <button type="submit">Add Item</button>
+        </form>
+
+        <h2>Current Data</h2>
+        <% if (data.length === 0) { %>
+            <p>No data found. Add your first item above, or upload a JSON file.</p>
+        <% } else { %>
+            <% data.forEach(item => { %>
+                <div class="item">
+                    <div class="details">
+                        <h3><%= item.title %> (ID: <%= item.id %>)</h3>
+                        <p><%= item.description %></p>
+                    </div>
+                    <div class="actions">
+                        <form action="/update" method="POST" style="display: none;" class="edit-form">
+                            <input type="hidden" name="id" value="<%= item.id %>">
+                            <label for="editTitle_<%= item.id %>">Title:</label>
+                            <input type="text" id="editTitle_<%= item.id %>" name="title" value="<%= item.title %>" required>
+                            <label for="editDescription_<%= item.id %>">Description:</label>
+                            <textarea id="editDescription_<%= item.id %>" name="description"><%= item.description %></textarea>
+                            <button type="submit">Save</button>
+                            <button type="button" class="cancel-edit">Cancel</button>
+                        </form>
+
+                        <button onclick="toggleEditForm(this)">Edit</button>
+
+                        <form action="/move" method="POST" style="display: inline;">
+                            <input type="hidden" name="id" value="<%= item.id %>">
+                            <button type="submit" name="direction" value="up" class="move">Move Up</button>
+                        </form>
+                        <form action="/move" method="POST" style="display: inline;">
+                            <input type="hidden" name="id" value="<%= item.id %>">
+                            <button type="submit" name="direction" value="down" class="move">Move Down</button>
+                        </form>
+                        <form action="/delete" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this item?');">
+                            <input type="hidden" name="id" value="<%= item.id %>">
+                            <button type="submit" class="delete">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            <% }) %>
+        <% } %>
+
+        <div class="file-upload-section">
+            <h2>Manage Data File</h2>
+
+            <form action="/upload" method="POST" enctype="multipart/form-data">
+                <label for="jsonFile">Upload JSON File:</label>
+                <input type="file" id="jsonFile" name="jsonFile" accept=".json" required>
+                <button type="submit">Upload & Replace</button>
+                <p><small>This will replace all current data with the contents of your uploaded JSON file.</small></p>
+            </form>
+
+            <form action="/download" method="GET">
+                <button type="submit">Download Current JSON</button>
+                <p><small>Downloads a copy of your current data as 'mydata.json'.</small></p>
+            </form>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleEditForm(button) {
+            const itemDiv = button.closest('.item');
+            const editForm = itemDiv.querySelector('.edit-form');
+            const otherButtons = itemDiv.querySelectorAll('.actions > button:not(.cancel-edit), .actions > form > button');
+
+            if (editForm.style.display === 'none' || editForm.style.display === '') {
+                editForm.style.display = 'block';
+                button.style.display = 'none'; // Hide the 'Edit' button
+                otherButtons.forEach(btn => btn.closest('form') ? btn.closest('form').style.display = 'none' : btn.style.display = 'none'); // Hide other action buttons
+            } else {
+                editForm.style.display = 'none';
+                button.style.display = 'inline-block'; // Show the 'Edit' button
+                otherButtons.forEach(btn => btn.closest('form') ? btn.closest('form').style.display = 'inline' : btn.style.display = 'inline-block'); // Show other action buttons
+            }
+        }
+
+        // Add event listeners for "Cancel" buttons
+        document.querySelectorAll('.cancel-edit').forEach(button => {
+            button.addEventListener('click', function() {
+                const itemDiv = this.closest('.item');
+                const editForm = itemDiv.querySelector('.edit-form');
+                const editButton = itemDiv.querySelector('.actions > button:not(.cancel-edit)');
+                const otherButtons = itemDiv.querySelectorAll('.actions > form > button, .actions > button'); // All other buttons
+
+                editForm.style.display = 'none';
+                editButton.style.display = 'inline-block';
+                otherButtons.forEach(btn => {
+                    // Check if the button is not the cancel button itself, and not the edit button
+                    if (btn !== this && btn !== editButton) {
+                         btn.closest('form') ? btn.closest('form').style.display = 'inline' : btn.style.display = 'inline-block';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
