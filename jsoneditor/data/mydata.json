@@ -1,70 +1,98 @@
 [
   {
-    "id": "parent_api_1",
+    "id": "parent_api_network_core",
     "name": "Core Network API",
-    "description": "Central API for managing core network infrastructure.",
+    "description": "Central API for managing core network infrastructure, facilitating service discovery and routing.",
     "parent_label": "strategic",
     "components": [
       {
-        "id": "comp_router_mgmt",
+        "id": "comp_router_mgmt_svc",
         "name": "Router Management Service",
-        "description": "Handles config and monitoring of network routers.",
+        "description": "Handles configuration and monitoring of network routers across all environments.",
         "component_type": "service",
         "component_label": "critical",
-        "component_versions": [ // Array of versions for this component
+        "component_versions": [
           {
             "version": "1.2.5",
-            "lifecycle_status": "active", // e.g., active, deprecated, beta, retired
+            "lifecycle_status": "active",
             "governance": {
-              "status": "approved", // e.g., draft, under_review, approved, rejected
-              "approval_link": "https://jira.example.com/ticket/ROUTERMGMT-123"
+              "status": "approved",
+              "approval_link": "https://jira.example.com/browse/ROUTERMGMT-123"
             },
-            "topology_diagram_link": "https://confluence.example.com/display/NET/Router+Mgmt+Topology+v1.2.5",
-            "deployment_locations": [ // Array for multiple site/zone/segment combos
+            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/Router+Mgmt+Topology+v1.2.5",
+            "deployment_locations": [
               {"site": "London-DC1", "zone": "DMZ-A", "segment": "Public-Facing"},
               {"site": "Dublin-DR", "zone": "DMZ-A", "segment": "Public-Facing"}
             ],
-            "operational_guidelines_link": "https://confluence.example.com/display/NET/Router+Mgmt+Ops+Guidelines",
-            "standards_tags": ["RFC1234", "ISO27001", "NIST800-53"], // Tags linking to a central standards library
-            "observability_links": [ // KVP for various observability tools
+            "operational_guidelines_link": "https://docs.example.com/router-mgmt-ops-guide-v1.2.5",
+            "standards_tags": ["RFC1234", "ISO27001", "NIST800-53"],
+            "observability_links": [
               {"key": "logging", "value": "https://kibana.example.com/logs?query=router-mgmt-v1.2.5"},
-              {"key": "monitoring", "value": "https://grafana.example.com/d/router-mgmt-v1.2.5"},
-              {"key": "capacity_monitoring", "value": "https://datadog.example.com/capacity/router-mgmt-v1.2.5"}
+              {"key": "monitoring", "value": "https://grafana.example.com/d/router-mgmt-v1.2.5"}
             ],
             "base_config_source_link": "https://github.com/network-configs/router-mgmt/blob/main/base_v1.2.5.yml",
-            "supported_capabilities": ["router-config-api", "firmware-update", "snmp-polling"] // Tags for capabilities
+            "supported_capabilities": ["router-config-api", "firmware-update", "snmp-polling", "bgp-routing"]
           },
           {
             "version": "1.2.0",
             "lifecycle_status": "deprecated",
             "governance": {
               "status": "approved",
-              "approval_link": "https://jira.example.com/ticket/ROUTERMGMT-567"
+              "approval_link": "https://jira.example.com/browse/ROUTERMGMT-567"
             },
-            "topology_diagram_link": "https://confluence.example.com/display/NET/Router+Mgmt+Topology+v1.2.0",
+            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/Router+Mgmt+Topology+v1.2.0",
             "deployment_locations": [
               {"site": "London-DC1", "zone": "DMZ-A", "segment": "Public-Facing"}
             ],
-            "operational_guidelines_link": "https://confluence.example.com/display/NET/Router+Mgmt+Ops+Guidelines_v1.2.0",
+            "operational_guidelines_link": "https://docs.example.com/router-mgmt-ops-guide-v1.2.0",
             "standards_tags": ["RFC1234"],
             "observability_links": [],
             "base_config_source_link": "https://github.com/network-configs/router-mgmt/blob/main/base_v1.2.0.yml",
             "supported_capabilities": ["router-config-api"]
           }
         ]
+      },
+      {
+        "id": "comp_dns_resolver_svc",
+        "name": "DNS Resolver Service",
+        "description": "Provides internal and external DNS resolution for all connected services.",
+        "component_type": "service",
+        "component_label": "critical",
+        "component_versions": [
+          {
+            "version": "2.1.0",
+            "lifecycle_status": "active",
+            "governance": {
+              "status": "approved",
+              "approval_link": "https://jira.example.com/browse/DNS-RES-001"
+            },
+            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/DNS+Resolver+Topology+v2.1.0",
+            "deployment_locations": [
+              {"site": "London-DC1", "zone": "Internal-A", "segment": "Service-Mesh"},
+              {"site": "Dublin-DR", "zone": "Internal-B", "segment": "Service-Mesh"}
+            ],
+            "operational_guidelines_link": "https://docs.example.com/dns-resolver-ops-guide-v2.1.0",
+            "standards_tags": ["RFC1035"],
+            "observability_links": [
+              {"key": "metrics", "value": "https://prometheus.example.com/d/dns-resolver"}
+            ],
+            "base_config_source_link": "https://github.com/network-configs/dns-resolver/blob/main/base_v2.1.0.conf",
+            "supported_capabilities": ["dns-forwarding", "caching", "dnssec"]
+          }
+        ]
       }
     ]
   },
   {
-    "id": "parent_api_2",
-    "name": "Firewall Policy Management",
-    "description": "API for defining and deploying firewall policies.",
-    "parent_label": "critical",
+    "id": "parent_api_security",
+    "name": "Network Security API",
+    "description": "API set for managing network security policies, firewalls, and access controls.",
+    "parent_label": "strategic",
     "components": [
       {
-        "id": "comp_policy_engine",
+        "id": "comp_firewall_policy_eng",
         "name": "Firewall Policy Engine Core",
-        "description": "Core logic for firewall policy evaluation.",
+        "description": "Core logic for firewall policy evaluation and enforcement across network zones.",
         "component_type": "engine",
         "component_label": "strategic",
         "component_versions": [
@@ -73,17 +101,49 @@
             "lifecycle_status": "active",
             "governance": {
               "status": "approved",
-              "approval_link": "https://jira.example.com/ticket/FWENGINE-001"
+              "approval_link": "https://jira.example.com/browse/FWENGINE-001"
             },
-            "topology_diagram_link": "https://confluence.example.com/display/NET/FW+Engine+Topology+v2.0.0",
+            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/FW+Engine+Topology+v2.0.0",
             "deployment_locations": [
-              {"site": "Manchester-DC2", "zone": "Internal", "segment": "Protected-Services"}
+              {"site": "Manchester-DC2", "zone": "Internal-Network", "segment": "Sensitive-Data"}
             ],
-            "operational_guidelines_link": "https://confluence.example.com/display/NET/FW+Engine+Ops+Guidelines_v2.0.0",
+            "operational_guidelines_link": "https://docs.example.com/fw-engine-ops-guide-v2.0.0",
             "standards_tags": ["NIST800-53", "PCI-DSS"],
-            "observability_links": [],
+            "observability_links": [
+              {"key": "flow_logs", "value": "https://splunk.example.com/logs?query=firewall-engine"},
+              {"key": "health_check", "value": "https://pingdom.example.com/fw-engine"}
+            ],
             "base_config_source_link": "https://github.com/network-configs/fw-engine/blob/main/base_v2.0.0.json",
-            "supported_capabilities": ["policy-definition", "acl-management"]
+            "supported_capabilities": ["policy-definition", "acl-management", "ip-filtering"]
+          }
+        ]
+      },
+      {
+        "id": "comp_proxy_gw",
+        "name": "Secure Proxy Gateway",
+        "description": "Provides secure outbound and inbound proxy services, including SSL interception.",
+        "component_type": "gateway",
+        "component_label": "critical",
+        "component_versions": [
+          {
+            "version": "1.0.0",
+            "lifecycle_status": "active",
+            "governance": {
+              "status": "approved",
+              "approval_link": "https://jira.example.com/browse/PROXY-GW-001"
+            },
+            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/Secure+Proxy+GW+Topology+v1.0.0",
+            "deployment_locations": [
+              {"site": "London-DC1", "zone": "Edge-Network", "segment": "Internet-DMZ"}
+            ],
+            "operational_guidelines_link": "https://docs.example.com/secure-proxy-gw-ops-guide-v1.0.0",
+            "standards_tags": ["ISO27001", "SOC2"],
+            "observability_links": [
+              {"key": "traffic_logs", "value": "https://elastic.example.com/proxy-traffic"},
+              {"key": "ssl_metrics", "value": "https://datadog.example.com/ssl-proxy-metrics"}
+            ],
+            "base_config_source_link": "https://github.com/network-configs/proxy-gw/blob/main/base_v1.0.0.conf",
+            "supported_capabilities": ["http-proxy", "https-proxy", "ssl-interception", "reverse-proxy", "load-balancing"]
           }
         ]
       }
@@ -91,24 +151,47 @@
   },
   {
     "id": "customer_opt_retail_basic_v1",
-    "type": "CustomerOptionSet", // Renamed for clarity
-    "customer_name": "RetailCo Basic",
+    "type": "CustomerOptionSet",
+    "customer_name": "RetailCo Basic Network Config",
     "customer_option_version": "1.0.0",
     "lifecycle_status": "active",
     "governance": {
       "status": "approved",
-      "approval_link": "https://jira.example.com/ticket/CUSTOPT-RET-001"
+      "approval_link": "https://jira.example.com/browse/CUSTOPT-RET-001"
     },
-    "guidance_rationale": "Standard RetailCo options for basic deployments.",
-    "capabilities_required": ["router-config-api"], // Capabilities this option set leverages/requires
-    "options": [ // Individual options within this set
+    "guidance_rationale": "Standard network configuration overrides for basic RetailCo deployments, focusing on logging and default access levels.",
+    "capabilities_required": ["router-config-api", "http-proxy"],
+    "options": [
       {
-        "option_name": "RetailCo Router Mgmt Logs Verbosity",
-        "config_block_pseudocode": "componentId: 'comp_router_mgmt', configKey: 'logLevel', value: 'DEBUG'"
+        "option_name": "Router Management Logs Verbosity",
+        "config_block_pseudocode": "componentId: 'comp_router_mgmt_svc', configKey: 'logLevel', value: 'DEBUG'"
       },
       {
-        "option_name": "RetailCo API Rate Limit (Default)",
-        "config_block_pseudocode": "componentId: 'comp_router_mgmt', configKey: 'apiRateLimit', value: 500"
+        "option_name": "Default API Rate Limit (RetailCo)",
+        "config_block_pseudocode": "componentId: 'comp_router_mgmt_svc', configKey: 'apiRateLimit', value: 500"
+      }
+    ]
+  },
+  {
+    "id": "customer_opt_enterprise_high_sec_v2",
+    "type": "CustomerOptionSet",
+    "customer_name": "EnterpriseCorp High-Security Profile",
+    "customer_option_version": "2.0.0",
+    "lifecycle_status": "active",
+    "governance": {
+      "status": "approved",
+      "approval_link": "https://jira.example.com/browse/CUSTOPT-ENT-002"
+    },
+    "guidance_rationale": "Advanced security configurations for EnterpriseCorp, enforcing strict policy controls and mandatory SSL inspection for all traffic.",
+    "capabilities_required": ["acl-management", "ssl-interception"],
+    "options": [
+      {
+        "option_name": "Firewall Default Action (EnterpriseCorp)",
+        "config_block_pseudocode": "componentId: 'comp_firewall_policy_eng', configKey: 'defaultAction', value: 'DENY'"
+      },
+      {
+        "option_name": "Mandatory SSL Interception",
+        "config_block_pseudocode": "componentId: 'comp_proxy_gw', configKey: 'forceSSLInterception', value: 'true', applyTo: 'all-traffic'"
       }
     ]
   }
