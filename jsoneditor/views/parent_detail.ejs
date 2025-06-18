@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= parent.name %> Components</title>
+    <style>
+        /* General Body and Container Styles - Keep in sync with index.ejs if not externalised */
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2, h3, h4 { color: #0056b3; } /* Added h3, h4 for consistency */
+
+        /* Form Styles */
+        form { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fafafa; }
+        form label { display: block; margin-bottom: 5px; font-weight: bold; }
+        form input[type="text"],
+        form textarea,
+        form input[type="file"],
+        form select { /* Added select for config options */
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        form textarea { min-height: 60px; resize: vertical; } /* Allow vertical resizing for textareas */
+        form button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 44px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 5px;
+        }
+        form button:hover { background-color: #218838; }
+
+        /* Item Display Styles */
+        .item { background-color: #e9ecef; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+        .item .details { flex-grow: 1; margin-right: 15px; }
+        .item .details h3 { margin: 0 0 5px 0; color: #343a40; }
+        .item .details p { margin: 0; font-size: 0.9em; color: #555; }
+
+        /* Sub-component display styles for parent_detail.ejs */
+        .sub-component-display {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .sub-component-display ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            padding: 0;
+        }
+        .sub-component-display li {
+            margin-bottom: 5px;
+        }
+
+        /* Action Buttons (Edit, Delete, Move) */
+        .item .actions { display: flex; flex-wrap: wrap; gap: 5px; } /* Added gap for better spacing */
+        .item .actions button,
+        .item .actions a.button { /* Style for the 'View/Edit Components' link */
+            background-color: #007bff;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none; /* For the link that looks like a button */
+            display: inline-block; /* Ensure link behaves like a button */
+            text-align: center;
+        }
+        .item .actions button:hover,
+        .item .actions a.button:hover { background-color: #0056b3; }
+        .item .actions button.delete { background-color: #dc3545; }
+        .item .actions button.delete:hover { background-color: #c82333; }
+        .item .actions button.move { background-color: #ffc107; color: #333; }
+        .item .actions button.move:hover { background-color: #e0a800; }
+
+        /* Message Display Styles */
+        .message { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
+        .message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .message:not(.error) { /* Default success style */
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* Dynamic Fields Section (for parent_detail.ejs) */
+        .dynamic-fields-section {
+            border: 1px dashed #b9d8f7;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #eaf6ff;
+            border-radius: 5px;
+        }
+        .dynamic-field-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        .dynamic-field-row input, .dynamic-field-row select {
+            flex: 1; /* Distribute space */
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .dynamic-field-row button {
+            background-color: #dc3545; /* Red for remove */
+            color: white;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .dynamic-field-row button:hover {
+            background-color: #c82333;
+        }
+        .add-field-button {
+            background-color: #007bff; /* Blue for add */
+            margin-top: 10px;
+        }
+        .add-field-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/<%= appName %>/" class="button">← Back to Parent APIs</a>
+        <h1>Components for: <%= parent.name %></h1>
+        <p><strong>Description:</strong> <%= parent.description %></p>
+        <p><strong>Version:</strong> <%= parent.parent_version %></p>
+        <p><strong>Label:</strong> <%= parent.label %></p>
+        <p>Parent ID: <%= parent.id %></p>
+
+        <% if (message) { %>
+            <div class="message <%= message.includes('Error') ? 'error' : '' %>">
+                <%= message %>
+            </div>
+        <% } %>
+
+        <h2>Add New Component</h2>
+        <form action="/<%= appName %>/parent/<%= parent.id %>/add-component" method="POST">
+            <label for="comp_name">Component Name:</label>
+            <input type="text" id="comp_name" name="comp_name" required>
+
+            <label for="comp_description">Description:</label>
+            <textarea id="comp_description" name="comp_description"></textarea>
+
+            <label for="comp_version">Version:</label>
+            <input type="text" id="comp_version" name="comp_version" value="1.0.0">
+
+            <label for="comp_label">Label (e.g., strategic, niche, contain):</label>
+            <input type="text" id="comp_label" name="comp_label" value="strategic">
+
+            <h3>Details:</h3>
+            <label for="topology_diagramLink">Topology Diagram Link:</label>
+            <input type="text" id="topology_diagramLink" name="topology_diagramLink">
+
+            <label for="topology_connectedSystems">Connected Systems (comma-separated):</label>
+            <input type="text" id="topology_connectedSystems" name="topology_connectedSystems">
+
+            <h4>Guidelines:</h4>
+            <div id="guidelines-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="guideline_title_0" placeholder="Title">
+                    <input type="text" name="guideline_link_0" placeholder="Link">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('guidelines')">Add Guideline</button>
+
+            <h4>Standards (comma-separated):</h4>
+            <input type="text" id="standards" name="standards">
+
+            <h4>Config Options:</h4>
+            <div id="config-options-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="config_key_0" placeholder="Key">
+                    <select name="config_type_0">
+                        <option value="string">string</option>
+                        <option value="number">number</option>
+                        <option value="boolean">boolean</option>
+                        <option value="enum">enum</option>
+                    </select>
+                    <input type="text" name="config_options_0" placeholder="Options (comma-separated for enum)">
+                    <input type="text" name="config_default_0" placeholder="Default Value">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('config-options')">Add Config Option</button>
+
+            <button type="submit">Add Component</button>
+        </form>
+
+        <h2>Existing Components</h2>
+        <% if (parent.components && parent.components.length === 0) { %>
+            <p>No components found for this Parent API.</p>
+        <% } else { %>
+            <% parent.components.forEach(component => { %>
+                <div class="item">
+                    <div class="details">
+                        <h3><%= component.name %> (v<%= component.component_version %>) <small>(ID: <%= component.id %>)</small></h3>
+                        <p><%= component.description %></p>
+                        <p><strong>Label:</strong> <%= component.label %></p>
+
+                        <% if (component.details) { %>
+                            <div class="sub-component-display">
+                                <h4>Component Details:</h4>
+                                <% if (component.details.topology && component.details.topology.diagramLink) { %>
+                                    <div><strong>Topology Diagram:</strong> <a href="<%= component.details.topology.diagramLink %>" target="_blank"><%= component.details.topology.diagramLink %></a></div>
+                                <% } %>
+                                <% if (component.details.topology && component.details.topology.connectedSystems && component.details.topology.connectedSystems.length > 0) { %>
+                                    <div><strong>Connected Systems:</strong> <%= component.details.topology.connectedSystems.join(', ') %></div>
+                                <% } %>
+                                <% if (component.details.guidelines && component.details.guidelines.length > 0) { %>
+                                    <div><strong>Guidelines:</strong>
+                                        <ul>
+                                            <% component.details.guidelines.forEach(g => { %>
+                                                <li><a href="<%= g.link %>" target="_blank"><%= g.title %></a></li>
+                                            <% }) %>
+                                        </ul>
+                                    </div>
+                                <% } %>
+                                <% if (component.details.standards && component.details.standards.length > 0) { %>
+                                    <div><strong>Standards:</strong> <%= component.details.standards.join(', ') %></div>
+                                <% } %>
+                                <% if (component.details.configOptions && component.details.configOptions.length > 0) { %>
+                                    <div><strong>Config Options:</strong>
+                                        <ul>
+                                            <% component.details.configOptions.forEach(cfg => { %>
+                                                <li><%= cfg.key %> (Type: <%= cfg.type %>)
+                                                    <% if (cfg.options && cfg.options.length > 0) { %>
+                                                        [Options: <%= cfg.options.join(', ') %>]
+                                                    <% } %>
+                                                    <% if (cfg.default) { %>
+                                                        (Default: <%= cfg.default %>)
+                                                    <% } %>
+                                                </li>
+                                            <% }) %>
+                                        </ul>
+                                    </div>
+                                <% } %>
+                            </div>
+                        <% } %>
+                    </div>
+                    <div class="actions">
+                        <button disabled title="Full dynamic edit form is complex to implement with plain EJS/JS.">Edit Component (WIP)</button>
+                        <form action="/<%= appName %>/parent/<%= parent.id %>/component/<%= component.id %>/delete" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this component?');">
+                            <input type="hidden" name="parentId" value="<%= parent.id %>">
+                            <input type="hidden" name="componentId" value="<%= component.id %>">
+                            <button type="submit" class="delete">Delete Component</button>
+                        </form>
+                    </div>
+                </div>
+            <% }) %>
+        <% } %>
+    </div>
+
+    <script>
+        // Start from 1 because one initial row is already in HTML for adding components
+        let guidelineCount = 1;
+        let configOptionCount = 1;
+
+        function addDynamicField(type) {
+            let container, newRow;
+            if (type === 'guidelines') {
+                container = document.getElementById('guidelines-container');
+                newRow = document.createElement('div');
+                newRow.className = 'dynamic-field-row';
+                newRow.innerHTML = `
+                    <input type="text" name="guideline_title_${guidelineCount}" placeholder="Title" required>
+                    <input type="text" name="guideline_link_${guidelineCount}" placeholder="Link" required>
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                `;
+                guidelineCount++;
+            } else if (type === 'config-options') {
+                container = document.getElementById('config-options-container');
+                newRow = document.createElement('div');
+                newRow.className = 'dynamic-field-row';
+                newRow.innerHTML = `
+                    <input type="text" name="config_key_${configOptionCount}" placeholder="Key" required>
+                    <select name="config_type_${configOptionCount}">
+                        <option value="string">string</option>
+                        <option value="number">number</option>
+                        <option value="boolean">boolean</option>
+                        <option value="enum">enum</option>
+                    </select>
+                    <input type="text" name="config_options_${configOptionCount}" placeholder="Options (comma-separated for enum)">
+                    <input type="text" name="config_default_${configOptionCount}" placeholder="Default Value">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                `;
+                configOptionCount++;
+            }
+            container.appendChild(newRow);
+        }
+
+        // The 'Edit Component' functionality with dynamic fields is complex.
+        // It would require pre-populating existing fields and dynamically adding/removing.
+        // For a full implementation, a client-side framework (React/Vue) is highly recommended.
+        // For now, the 'Edit Component' button is disabled as indicated in the HTML.
+    </script>
+</body>
+</html>
