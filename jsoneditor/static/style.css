@@ -1,0 +1,130 @@
+/* General Body and Container Styles */
+body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+.container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+h1, h2, h3, h4 { color: #0056b3; } /* Added h3, h4 for consistency */
+
+/* Form Styles */
+form { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fafafa; }
+form label { display: block; margin-bottom: 5px; font-weight: bold; }
+form input[type="text"],
+form textarea,
+form input[type="file"],
+form select { /* Added select for config options */
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+form textarea { min-height: 60px; resize: vertical; } /* Allow vertical resizing for textareas */
+form button {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 5px;
+}
+form button:hover { background-color: #218838; }
+
+/* Item Display Styles */
+.item { background-color: #e9ecef; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.item .details { flex-grow: 1; margin-right: 15px; }
+.item .details h3 { margin: 0 0 5px 0; color: #343a40; }
+.item .details p { margin: 0; font-size: 0.9em; color: #555; }
+
+/* Sub-component display styles for parent_detail.ejs */
+.sub-component-display {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+.sub-component-display ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    padding: 0;
+}
+.sub-component-display li {
+    margin-bottom: 5px;
+}
+
+
+/* Action Buttons (Edit, Delete, Move) */
+.item .actions { display: flex; flex-wrap: wrap; gap: 5px; } /* Added gap for better spacing */
+.item .actions button,
+.item .actions a.button { /* Style for the 'View/Edit Components' link */
+    background-color: #007bff;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none; /* For the link that looks like a button */
+    display: inline-block; /* Ensure link behaves like a button */
+    text-align: center;
+}
+.item .actions button:hover,
+.item .actions a.button:hover { background-color: #0056b3; }
+.item .actions button.delete { background-color: #dc3545; }
+.item .actions button.delete:hover { background-color: #c82333; }
+.item .actions button.move { background-color: #ffc107; color: #333; }
+.item .actions button.move:hover { background-color: #e0a800; }
+
+/* Message Display Styles */
+.message { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
+.message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.message:not(.error) { /* Default success style */
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+
+/* File Upload/Download Section Styles */
+.file-upload-section { margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; }
+.file-upload-section button { background-color: #17a2b8; } /* Info blue for download/upload */
+.file-upload-section button:hover { background-color: #138496; }
+
+/* Dynamic Fields Section (for parent_detail.ejs) */
+.dynamic-fields-section {
+    border: 1px dashed #b9d8f7;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #eaf6ff;
+    border-radius: 5px;
+}
+.dynamic-field-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+.dynamic-field-row input, .dynamic-field-row select {
+    flex: 1; /* Distribute space */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.dynamic-field-row button {
+    background-color: #dc3545; /* Red for remove */
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.dynamic-field-row button:hover {
+    background-color: #c82333;
+}
+.add-field-button {
+    background-color: #007bff; /* Blue for add */
+    margin-top: 10px;
+}
+.add-field-button:hover {
+    background-color: #0056b3;
+}
