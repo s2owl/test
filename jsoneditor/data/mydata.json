@@ -3,31 +3,112 @@
     "id": "parent_api_1",
     "name": "Core Network API",
     "description": "Central API for managing core network infrastructure.",
-    "parent_version": "1.0.0",
-    "label": "strategic",
+    "parent_label": "strategic",
     "components": [
       {
         "id": "comp_router_mgmt",
         "name": "Router Management Service",
-        "description": "Handles configuration and monitoring of network routers.",
-        "component_version": "1.2.5",
-        "label": "strategic",
-        "details": {
-          "topology": {
-            "diagramLink": "https://example.com/diagrams/router-mgmt-v1.png",
-            "connectedSystems": ["auth-service", "monitoring-platform"]
+        "description": "Handles config and monitoring of network routers.",
+        "component_type": "service",
+        "component_label": "critical",
+        "component_versions": [ // Array of versions for this component
+          {
+            "version": "1.2.5",
+            "lifecycle_status": "active", // e.g., active, deprecated, beta, retired
+            "governance": {
+              "status": "approved", // e.g., draft, under_review, approved, rejected
+              "approval_link": "https://jira.example.com/ticket/ROUTERMGMT-123"
+            },
+            "topology_diagram_link": "https://confluence.example.com/display/NET/Router+Mgmt+Topology+v1.2.5",
+            "deployment_locations": [ // Array for multiple site/zone/segment combos
+              {"site": "London-DC1", "zone": "DMZ-A", "segment": "Public-Facing"},
+              {"site": "Dublin-DR", "zone": "DMZ-A", "segment": "Public-Facing"}
+            ],
+            "operational_guidelines_link": "https://confluence.example.com/display/NET/Router+Mgmt+Ops+Guidelines",
+            "standards_tags": ["RFC1234", "ISO27001", "NIST800-53"], // Tags linking to a central standards library
+            "observability_links": [ // KVP for various observability tools
+              {"key": "logging", "value": "https://kibana.example.com/logs?query=router-mgmt-v1.2.5"},
+              {"key": "monitoring", "value": "https://grafana.example.com/d/router-mgmt-v1.2.5"},
+              {"key": "capacity_monitoring", "value": "https://datadog.example.com/capacity/router-mgmt-v1.2.5"}
+            ],
+            "base_config_source_link": "https://github.com/network-configs/router-mgmt/blob/main/base_v1.2.5.yml",
+            "supported_capabilities": ["router-config-api", "firmware-update", "snmp-polling"] // Tags for capabilities
           },
-          "guidelines": [
-            {"title": "Deployment Best Practices", "link": "https://example.com/docs/deploy-router-mgmt.pdf"},
-            {"title": "Security Hardening", "link": "https://example.com/docs/security-router-mgmt.md"}
-          ],
-          "standards": ["RFC1234", "ISO27001"],
-          "configOptions": [
-            {"key": "logLevel", "type": "enum", "options": ["DEBUG", "INFO", "WARN"], "default": "INFO"},
-            {"key": "apiPort", "type": "number", "default": 8080},
-            {"key": "authRequired", "type": "boolean", "default": true}
-          ]
-        }
+          {
+            "version": "1.2.0",
+            "lifecycle_status": "deprecated",
+            "governance": {
+              "status": "approved",
+              "approval_link": "https://jira.example.com/ticket/ROUTERMGMT-567"
+            },
+            "topology_diagram_link": "https://confluence.example.com/display/NET/Router+Mgmt+Topology+v1.2.0",
+            "deployment_locations": [
+              {"site": "London-DC1", "zone": "DMZ-A", "segment": "Public-Facing"}
+            ],
+            "operational_guidelines_link": "https://confluence.example.com/display/NET/Router+Mgmt+Ops+Guidelines_v1.2.0",
+            "standards_tags": ["RFC1234"],
+            "observability_links": [],
+            "base_config_source_link": "https://github.com/network-configs/router-mgmt/blob/main/base_v1.2.0.yml",
+            "supported_capabilities": ["router-config-api"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent_api_2",
+    "name": "Firewall Policy Management",
+    "description": "API for defining and deploying firewall policies.",
+    "parent_label": "critical",
+    "components": [
+      {
+        "id": "comp_policy_engine",
+        "name": "Firewall Policy Engine Core",
+        "description": "Core logic for firewall policy evaluation.",
+        "component_type": "engine",
+        "component_label": "strategic",
+        "component_versions": [
+          {
+            "version": "2.0.0",
+            "lifecycle_status": "active",
+            "governance": {
+              "status": "approved",
+              "approval_link": "https://jira.example.com/ticket/FWENGINE-001"
+            },
+            "topology_diagram_link": "https://confluence.example.com/display/NET/FW+Engine+Topology+v2.0.0",
+            "deployment_locations": [
+              {"site": "Manchester-DC2", "zone": "Internal", "segment": "Protected-Services"}
+            ],
+            "operational_guidelines_link": "https://confluence.example.com/display/NET/FW+Engine+Ops+Guidelines_v2.0.0",
+            "standards_tags": ["NIST800-53", "PCI-DSS"],
+            "observability_links": [],
+            "base_config_source_link": "https://github.com/network-configs/fw-engine/blob/main/base_v2.0.0.json",
+            "supported_capabilities": ["policy-definition", "acl-management"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "customer_opt_retail_basic_v1",
+    "type": "CustomerOptionSet", // Renamed for clarity
+    "customer_name": "RetailCo Basic",
+    "customer_option_version": "1.0.0",
+    "lifecycle_status": "active",
+    "governance": {
+      "status": "approved",
+      "approval_link": "https://jira.example.com/ticket/CUSTOPT-RET-001"
+    },
+    "guidance_rationale": "Standard RetailCo options for basic deployments.",
+    "capabilities_required": ["router-config-api"], // Capabilities this option set leverages/requires
+    "options": [ // Individual options within this set
+      {
+        "option_name": "RetailCo Router Mgmt Logs Verbosity",
+        "config_block_pseudocode": "componentId: 'comp_router_mgmt', configKey: 'logLevel', value: 'DEBUG'"
+      },
+      {
+        "option_name": "RetailCo API Rate Limit (Default)",
+        "config_block_pseudocode": "componentId: 'comp_router_mgmt', configKey: 'apiRateLimit', value: 500"
       }
     ]
   }
