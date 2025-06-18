@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Option Set: <%= optionSet.customer_name %></title>
+    <style>
+        /* General Body and Container Styles - Keep in sync with index.ejs if not externalised */
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2, h3, h4 { color: #0056b3; } /* Added h3, h4 for consistency */
+
+        /* Form Styles */
+        form { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fafafa; }
+        form label { display: block; margin-bottom: 5px; font-weight: bold; }
+        form input[type="text"],
+        form textarea,
+        form input[type="file"],
+        form select { /* Added select for config options */
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        form textarea { min-height: 60px; resize: vertical; } /* Allow vertical resizing for textareas */
+        form button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 5px;
+        }
+        form button:hover { background-color: #218838; }
+
+        /* Item Display Styles */
+        .item { background-color: #e9ecef; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+        .item .details { flex-grow: 1; margin-right: 15px; }
+        .item .details h3 { margin: 0 0 5px 0; color: #343a40; }
+        .item .details p { margin: 0; font-size: 0.9em; color: #555; }
+
+        /* Sub-component display styles (can apply to customer options too) */
+        .sub-component-display {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .sub-component-display ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            padding: 0;
+        }
+        .sub-component-display li {
+            margin-bottom: 5px;
+        }
+
+        /* Action Buttons (Edit, Delete, Move) */
+        .actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; } /* Added margin-top for spacing */
+        .actions button,
+        .actions a.button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .actions button:hover,
+        .actions a.button:hover { background-color: #0056b3; }
+        .actions button.delete { background-color: #dc3545; }
+        .actions button.delete:hover { background-color: #c82333; }
+
+        /* Message Display Styles */
+        .message { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
+        .message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .message:not(.error) {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* Dynamic Fields Section */
+        .dynamic-fields-section {
+            border: 1px dashed #b9d8f7;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #eaf6ff;
+            border-radius: 5px;
+        }
+        .dynamic-field-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .dynamic-field-row input, .dynamic-field-row select, .dynamic-field-row textarea {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .dynamic-field-row button {
+            background-color: #dc3545;
+            color: white;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .dynamic-field-row button:hover {
+            background-color: #c82333;
+        }
+        .add-field-button {
+            background-color: #007bff;
+            margin-top: 10px;
+        }
+        .add-field-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/<%= appName %>/" class="button">← Back to All APIs</a>
+        <h1>Customer Option Set: <%= optionSet.customer_name %></h1>
+        <p><strong>Version:</strong> <%= optionSet.customer_option_version %></p>
+        <p><strong>Lifecycle Status:</strong> <%= optionSet.lifecycle_status %></p>
+        <p><strong>Governance Status:</strong> <%= optionSet.governance.status %> (<a href="<%= optionSet.governance.approval_link %>" target="_blank">Approval Link</a>)</p>
+        <p><strong>Guidance / Rationale:</strong> <%= optionSet.guidance_rationale %></p>
+        <p><strong>Capabilities Required:</strong> <%= optionSet.capabilities_required.join(', ') %></p>
+        <p>Option Set ID: <%= optionSet.id %></p>
+
+        <% if (message) { %>
+            <div class="message <%= message.includes('Error') ? 'error' : '' %>">
+                <%= message %>
+            </div>
+        <% } %>
+
+        <h2>Edit Customer Option Set</h2>
+        <form action="/<%= appName %>/update-customer-option-set" method="POST">
+            <input type="hidden" name="id" value="<%= optionSet.id %>">
+
+            <label for="customer_name">Customer Name:</label>
+            <input type="text" id="customer_name" name="customer_name" value="<%= optionSet.customer_name %>" required>
+
+            <label for="customer_option_version">Version:</label>
+            <input type="text" id="customer_option_version" name="customer_option_version" value="<%= optionSet.customer_option_version %>" required>
+
+            <label for="lifecycle_status">Lifecycle Status:</label>
+            <input type="text" id="lifecycle_status" name="lifecycle_status" value="<%= optionSet.lifecycle_status %>">
+
+            <h4>Governance:</h4>
+            <label for="governance_status">Status:</label>
+            <input type="text" id="governance_status" name="governance_status" value="<%= optionSet.governance.status %>">
+            <label for="governance_approval_link">Approval Link:</label>
+            <input type="text" id="governance_approval_link" name="governance_approval_link" value="<%= optionSet.governance.approval_link %>">
+
+            <label for="guidance_rationale">Guidance / Rationale:</label>
+            <textarea id="guidance_rationale" name="guidance_rationale"><%= optionSet.guidance_rationale %></textarea>
+
+            <label for="capabilities_required">Capabilities Required (comma-separated):</label>
+            <input type="text" id="capabilities_required" name="capabilities_required" value="<%= optionSet.capabilities_required.join(', ') %>">
+
+            <h3>Options:</h3>
+            <div id="customer-options-container">
+                <% if (optionSet.options && optionSet.options.length > 0) { %>
+                    <% optionSet.options.forEach((opt, index) => { %>
+                        <div class="dynamic-field-row">
+                            <input type="text" name="option_name_<%= index %>" placeholder="Option Name" value="<%= opt.option_name %>" required>
+                            <textarea name="config_pseudocode_<%= index %>" placeholder="Config Pseudo-code Block"><%= opt.config_block_pseudocode %></textarea>
+                            <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="dynamic-field-row">
+                        <input type="text" name="option_name_0" placeholder="Option Name" required>
+                        <textarea name="config_pseudocode_0" placeholder="Config Pseudo-code Block"></textarea>
+                        <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                    </div>
+                <% } %>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('customer-option', 'customer-options-container', 'option_')">Add Option</button>
+
+            <button type="submit">Save Customer Option Set</button>
+        </form>
+
+    </div>
+
+    <script>
+        // Use a global counter for the dynamic options, for simplicity in edit/add form
+        // In a more complex app, you might re-initialize this based on existing options length
+        let customerOptionCount = <%= optionSet.options ? optionSet.options.length : 1 %>;
+
+        function addDynamicField(type, containerId, fieldPrefix) {
+            const container = document.getElementById(containerId);
+            const newRow = document.createElement('div');
+            newRow.className = 'dynamic-field-row';
+
+            const currentIndex = customerOptionCount++; // Increment and use
+
+            if (type === 'customer-option') {
+                newRow.innerHTML = `
+                    <input type="text" name="${fieldPrefix}name_${currentIndex}" placeholder="Option Name" required>
+                    <textarea name="config_pseudocode_${currentIndex}" placeholder="Config Pseudo-code Block"></textarea>
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                `;
+            }
+            container.appendChild(newRow);
+        }
+    </script>
+</body>
+</html>
