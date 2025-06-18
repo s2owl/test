@@ -1,17 +1,34 @@
 [
   {
-    "id": "item1",
-    "title": "First Item",
-    "description": "This is the description for the first item."
-  },
-  {
-    "id": "item2",
-    "title": "Second Item",
-    "description": "Another piece of content here."
-  },
-  {
-    "id": "item3",
-    "title": "Third Item",
-    "description": "And the last one for now."
+    "id": "parent_api_1",
+    "name": "Core Network API",
+    "description": "Central API for managing core network infrastructure.",
+    "parent_version": "1.0.0",
+    "label": "strategic",
+    "components": [
+      {
+        "id": "comp_router_mgmt",
+        "name": "Router Management Service",
+        "description": "Handles configuration and monitoring of network routers.",
+        "component_version": "1.2.5",
+        "label": "strategic",
+        "details": {
+          "topology": {
+            "diagramLink": "https://example.com/diagrams/router-mgmt-v1.png",
+            "connectedSystems": ["auth-service", "monitoring-platform"]
+          },
+          "guidelines": [
+            {"title": "Deployment Best Practices", "link": "https://example.com/docs/deploy-router-mgmt.pdf"},
+            {"title": "Security Hardening", "link": "https://example.com/docs/security-router-mgmt.md"}
+          ],
+          "standards": ["RFC1234", "ISO27001"],
+          "configOptions": [
+            {"key": "logLevel", "type": "enum", "options": ["DEBUG", "INFO", "WARN"], "default": "INFO"},
+            {"key": "apiPort", "type": "number", "default": 8080},
+            {"key": "authRequired", "type": "boolean", "default": true}
+          ]
+        }
+      }
+    ]
   }
 ]
