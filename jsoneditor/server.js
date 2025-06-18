@@ -26,9 +26,22 @@ const DATA_FILE = path.join(__dirname, 'data', 'mydata.json');
 });
 
 // Ensure mydata.json exists and is a valid array
-if (!fs.existsSync(DATA_FILE) || !Array.isArray(JSON.parse(fs.readFileSync(DATA_FILE, 'utf8') || '[]'))) {
-    fs.writeFileSync(DATA_FILE, '[]', 'utf8');
+// Read, then check if it's an array. If not, write an empty array.
+try {
+    const fileContent = fs.readFileSync(DATA_FILE, 'utf8');
+    const parsedContent = JSON.parse(fileContent);
+    if (!Array.isArray(parsedContent)) {
+        fs.writeFileSync(DATA_FILE, '[]', 'utf8');
+    }
+} catch (error) {
+    // If file doesn't exist or is invalid JSON, create it as an empty array
+    if (error.code === 'ENOENT' || error instanceof SyntaxError) {
+        fs.writeFileSync(DATA_FILE, '[]', 'utf8');
+    } else {
+        console.error("Error checking/initializing data file:", error);
+    }
 }
+
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -57,14 +70,14 @@ const parseStringToArray = (str) => {
 };
 
 // Helper to parse dynamic form fields for deployment_locations
-const parseDeploymentLocations = (body) => {
+const parseDeploymentLocations = (body, prefix = 'deployment_') => {
     const locations = [];
     let i = 0;
-    while (body[`deployment_site_${i}`] || body[`deployment_zone_${i}`] || body[`deployment_segment_${i}`]) {
+    while (body[`${prefix}site_${i}`] || body[`${prefix}zone_${i}`] || body[`${prefix}segment_${i}`]) {
         locations.push({
-            site: body[`deployment_site_${i}`] || '',
-            zone: body[`deployment_zone_${i}`] || '',
-            segment: body[`deployment_segment_${i}`] || ''
+            site: body[`${prefix}site_${i}`] || '',
+            zone: body[`${prefix}zone_${i}`] || '',
+            segment: body[`${prefix}segment_${i}`] || ''
         });
         i++;
     }
@@ -72,13 +85,13 @@ const parseDeploymentLocations = (body) => {
 };
 
 // Helper to parse dynamic form fields for observability_links
-const parseObservabilityLinks = (body) => {
+const parseObservabilityLinks = (body, prefix = 'obs_') => {
     const links = [];
     let i = 0;
-    while (body[`obs_key_${i}`] || body[`obs_value_${i}`]) {
+    while (body[`${prefix}key_${i}`] || body[`${prefix}value_${i}`]) {
         links.push({
-            key: body[`obs_key_${i}`] || '',
-            value: body[`obs_value_${i}`] || ''
+            key: body[`${prefix}key_${i}`] || '',
+            value: body[`${prefix}value_${i}`] || ''
         });
         i++;
     }
@@ -86,13 +99,13 @@ const parseObservabilityLinks = (body) => {
 };
 
 // Helper to parse dynamic form fields for customer options
-const parseCustomerOptions = (body) => {
+const parseCustomerOptions = (body, prefix = 'option_') => {
     const options = [];
     let i = 0;
-    while (body[`option_name_${i}`] || body[`config_pseudocode_${i}`]) {
+    while (body[`${prefix}name_${i}`] || body[`config_pseudocode_${i}`]) { // Note: config_pseudocode doesn't have a prefix in the current form. Adjust as needed.
         options.push({
-            option_name: body[`option_name_${i}`] || '',
-            config_block_pseudocode: body[`config_pseudocode_${i}`] || ''
+            option_name: body[`${prefix}name_${i}`] || '',
+            config_block_pseudocode: body[`config_pseudocode_${i}`] || '' // Assuming this name
         });
         i++;
     }
@@ -110,7 +123,7 @@ app.get(`/${appName}/`, (req, res) => {
 
     res.render('index', {
         parents: parents,
-        customerOptionSets: customerOptionSets, // Pass customer options to index.ejs
+        customerOptionSets: customerOptionSets,
         message: req.query.message || null,
         appName: appName
     });
@@ -157,7 +170,7 @@ app.post(`/${appName}/add-parent`, (req, res) => {
 // Update Parent
 app.post(`/${appName}/update-parent`, (req, res) => {
     const allData = readData();
-    const { id, parent_name, parent_description, parent_label } = req.body; // Removed parent_version from direct edit as it's not a top-level field anymore
+    const { id, parent_name, parent_description, parent_label } = req.body;
     const parentIndex = allData.findIndex(p => p.id === id && p.components !== undefined);
 
     if (parentIndex > -1) {
@@ -191,17 +204,17 @@ app.post(`/${appName}/parent/:parentId/add-component`, (req, res) => {
     }
 
     const newComponentVersion = {
-        version: req.body.version || '1.0.0', // This is the version for this specific entry
+        version: req.body.version || '1.0.0',
         lifecycle_status: req.body.lifecycle_status || 'active',
         governance: {
             status: req.body.governance_status || 'draft',
             approval_link: req.body.governance_approval_link || ''
         },
         topology_diagram_link: req.body.topology_diagram_link || '',
-        deployment_locations: parseDeploymentLocations(req.body),
+        deployment_locations: parseDeploymentLocations(req.body, 'deployment_'), // Use specific prefix
         operational_guidelines_link: req.body.operational_guidelines_link || '',
         standards_tags: parseStringToArray(req.body.standards_tags),
-        observability_links: parseObservabilityLinks(req.body),
+        observability_links: parseObservabilityLinks(req.body, 'obs_'), // Use specific prefix
         base_config_source_link: req.body.base_config_source_link || '',
         supported_capabilities: parseStringToArray(req.body.supported_capabilities)
     };
@@ -244,16 +257,23 @@ app.post(`/${appName}/parent/:parentId/component/:componentId/add-version`, (req
             approval_link: req.body.governance_approval_link || ''
         },
         topology_diagram_link: req.body.topology_diagram_link || '',
-        deployment_locations: parseDeploymentLocations(req.body),
+        // Use version-specific prefixes for dynamic fields for add-version forms
+        deployment_locations: parseDeploymentLocations(req.body, 'new_version_deployment_'),
         operational_guidelines_link: req.body.operational_guidelines_link || '',
         standards_tags: parseStringToArray(req.body.standards_tags),
-        observability_links: parseObservabilityLinks(req.body),
+        observability_links: parseObservabilityLinks(req.body, 'new_version_obs_'),
         base_config_source_link: req.body.base_config_source_link || '',
         supported_capabilities: parseStringToArray(req.body.supported_capabilities)
     };
 
+    // Check for duplicate version
+    const existingVersion = component.component_versions.find(v => v.version === newComponentVersion.version);
+    if (existingVersion) {
+        return res.redirect(`/${appName}/parent/${req.params.parentId}/?message=` + encodeURIComponent(`Error: Version ${newComponentVersion.version} already exists for this component.`));
+    }
+
     component.component_versions.push(newComponentVersion);
-    writeData(allData); // Write the entire data array back
+    writeData(allData);
     res.redirect(`/${appName}/parent/${req.params.parentId}/?message=` + encodeURIComponent('New version added to component!'));
 });
 
@@ -364,7 +384,8 @@ app.post(`/${appName}/delete-customer-option-set`, (req, res) => {
 });
 
 
-// Upload/Download remain the same (they operate on the entire mydata.json)
+// --- Upload/Download Routes ---
+
 app.get(`/${appName}/download`, (req, res) => {
     res.download(DATA_FILE, 'mydata.json', (err) => {
         if (err) {
