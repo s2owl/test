@@ -423,3 +423,47 @@ app.post(`/${appName}/parent/:parentId/component/:componentId/add-version`, (req
         governance: {
             status: req.body.governance_status || 'draft',
             approval_link: req.body.governance_approv
+
+// --- File Upload/Download Routes ---
+
+// Download the entire mydata.json file
+app.get(`/${appName}/download`, (req, res) => {
+    res.download(DATA_FILE, 'mydata.json', (err) => {
+        if (err) {
+            console.error("Error downloading file:", err);
+            if (!res.headersSent) {
+                res.status(500).send("Could not download the file.");
+            }
+        }
+    });
+});
+
+// Upload a new mydata.json file (replaces current data)
+app.post(`/${appName}/upload`, upload.single('jsonFile'), (req, res) => {
+    if (!req.file) {
+        return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: No file uploaded.'));
+    }
+    const uploadedFilePath = req.file.path;
+
+    fs.readFile(uploadedFilePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error("Error reading uploaded file:", err);
+            fs.unlink(uploadedFilePath, () => {}); // Clean up temp file
+            return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error reading uploaded file.'));
+        }
+        try {
+            const uploadedJson = JSON.parse(data);
+            if (!Array.isArray(uploadedJson)) {
+                 fs.unlink(uploadedFilePath, () => {}); // Clean up temp file
+                 return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Uploaded file is not a valid JSON array.'));
+            }
+            writeData(uploadedJson); // Overwrite current data
+            fs.unlink(uploadedFilePath, () => {}); // Clean up temp file
+            res.redirect(`/${appName}/?message=` + encodeURIComponent('JSON data uploaded successfully!'));
+        } catch (parseError) {
+            console.error("Error parsing uploaded JSON:", parseError);
+            fs.unlink(uploadedFilePath, () => {}); // Clean up temp file
+            res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Invalid JSON file uploaded.'));
+        }
+    });
+});
