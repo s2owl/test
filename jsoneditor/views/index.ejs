@@ -202,7 +202,13 @@
             <input type="text" id="searchCategoryName" name="categoryName" placeholder="e.g., Network Load Balancer">
 
             <label for="searchCategoryStatus">Category Status:</label>
-            <input type="text" id="searchCategoryStatus" name="categoryStatus" placeholder="e.g., isApproved, notApproved">
+            <select id="searchCategoryStatus" name="categoryStatus">
+                <option value="">-- Any --</option>
+                <option value="isApproved">isApproved</option>
+                <option value="notApproved">notApproved</option>
+                <option value="isPending">isPending</option>
+                <option value="isRetired">isRetired</option>
+            </select>
 
             <label for="searchComponentName">Component Name:</label>
             <input type="text" id="searchComponentName" name="componentName" placeholder="e.g., F5 LTM">
@@ -210,13 +216,28 @@
             <label for="searchComponentType">Component Type:</label>
             <input type="text" id="searchComponentType" name="componentType" placeholder="e.g., service, engine, gateway">
 
+            <label for="searchComponentLabel">Component Label:</label>
+            <input type="text" id="searchComponentLabel" name="componentLabel" placeholder="e.g., Strategic, Niche">
+
+            <label for="searchArrFlag">Has ARR Flag:</label>
+            <select id="searchArrFlag" name="arrFlag">
+                <option value="">-- Any --</option>
+                <option value="true">Yes</option>
+            </select>
+
+            <label for="searchRiskFlag">Has Risk Flag:</label>
+            <select id="searchRiskFlag" name="riskFlag">
+                <option value="">-- Any --</option>
+                <option value="true">Yes</option>
+            </select>
+
             <label for="searchLifecycleStatus">Lifecycle Status (Component Version):</label>
             <select id="searchLifecycleStatus" name="lifecycleStatus">
                 <option value="">-- Any --</option>
-                <option value="active">Active</option>
-                <option value="deprecated">Deprecated</option>
-                <option value="beta">Beta</option>
-                <option value="retired">Retired</option>
+                <option value="Strategic">Strategic</option>
+                <option value="Niche">Niche</option>
+                <option value="Contain">Contain</option>
+                <option value="Retired">Retired</option>
             </select>
 
             <label for="searchSite">Deployment Site:</label>
@@ -224,6 +245,9 @@
 
             <label for="searchCustomerName">Customer Option Name:</label>
             <input type="text" id="searchCustomerName" name="customerName" placeholder="e.g., Round Robin">
+
+            <label for="searchPseudoCodeKeyword">Pseudo-code Keyword:</label>
+            <input type="text" id="searchPseudoCodeKeyword" name="pseudocodeKeyword" placeholder="e.g., FORCE_SSL_INTERCEPTION">
 
             <button type="submit">Search</button>
         </form>
@@ -240,28 +264,37 @@
                         <h3><%= category.name %> (v<%= category.category_version %>)</h3>
                         <p><%= category.rationale %></p>
                         <p><strong>Status:</strong> <%= category.status %></p>
-                        <p><strong>Governance Link:</strong> <a href="<%= category.governance_record_link %>" target="_blank"><%= category.governance_record_link %></a></p>
-                        <p><strong>Topology:</strong> <a href="<%= category.topology_view_link %>" target="_blank">View Diagram</a></p>
-                        <p><strong>Roadmap:</strong> <a href="<%= category.roadmap_link %>" target="_blank">View Roadmap</a></p>
-
+                        <p><strong>Last Updated:</strong> <%= category.last_updated ? new Date(category.last_updated).toLocaleString('en-GB') : 'N/A' %></p>
+                        
                         <div class="sub-component-display">
-                            <% if (category.guidelines_library_tags && category.guidelines_library_tags.length > 0) { %>
-                                <div><strong>Guidelines:</strong> <%= category.guidelines_library_tags.join(', ') %></div>
+                            <% if (category.governance_record_link) { %>
+                                <div><strong>Governance Link:</strong> <a href="<%= category.governance_record_link %>" target="_blank">View Record</a></div>
                             <% } %>
-                            <% if (category.controls_alignments_library_tags && category.controls_alignments_library_tags.length > 0) { %>
-                                <div><strong>Controls Alignments:</strong> <%= category.controls_alignments_library_tags.join(', ') %></div>
+                            <% if (category.topology_view_link) { %>
+                                <div><strong>Topology:</strong> <a href="<%= category.topology_view_link %>" target="_blank">View Diagram</a></div>
                             <% } %>
-                            <% if (category.standards_library_tags && category.standards_library_tags.length > 0) { %>
-                                <div><strong>Standards:</strong> <%= category.standards_library_tags.join(', ') %></div>
+                            <% if (category.roadmap_link) { %>
+                                <div><strong>Roadmap:</strong> <a href="<%= category.roadmap_link %>" target="_blank">View Roadmap</a></div>
                             <% } %>
                             <% if (category.fsa_link) { %>
-                                <div><strong>FSA Link:</strong> <a href="<%= category.fsa_link %>" target="_blank"><%= category.fsa_link %></a></div>
+                                <div><strong>FSA Link:</strong> <a href="<%= category.fsa_link %>" target="_blank">View FSA</a></div>
+                            <% } %>
+
+                            <% if (category.guidelines_library_tags && category.guidelines_library_tags.length > 0) { %>
+                                <div><strong>Guidelines Tags:</strong> <%= category.guidelines_library_tags.join(', ') %></div>
+                            <% } %>
+                            <% if (category.controls_alignments_library_tags && category.controls_alignments_library_tags.length > 0) { %>
+                                <div><strong>Controls Alignments Tags:</strong> <%= category.controls_alignments_library_tags.join(', ') %></div>
+                            <% } %>
+                            <% if (category.standards_library_tags && category.standards_library_tags.length > 0) { %>
+                                <div><strong>Standards Tags:</strong> <%= category.standards_library_tags.join(', ') %></div>
                             <% } %>
                             <% if (category.fsa_library_tags && category.fsa_library_tags.length > 0) { %>
-                                <div><strong>FSA Tags:</strong> <%= category.fsa_library_tags.join(', ') %></div>
+                                <div><strong>FSA Library Tags:</strong> <%= category.fsa_library_tags.join(', ') %></div>
                             <% } %>
+
                             <% if (category.observability_kvp && category.observability_kvp.length > 0) { %>
-                                <div><strong>Observability:</strong>
+                                <div><strong>Observability Contacts:</strong>
                                     <ul>
                                         <% category.observability_kvp.forEach(item => { %>
                                             <li><%= item.key %>: <a href="<%= item.value %>" target="_blank"><%= item.value %></a></li>
@@ -270,7 +303,7 @@
                                 </div>
                             <% } %>
                             <% if (category.contacts_kvp && category.contacts_kvp.length > 0) { %>
-                                <div><strong>Contacts:</strong>
+                                <div><strong>General Contacts:</strong>
                                     <ul>
                                         <% category.contacts_kvp.forEach(item => { %>
                                             <li><%= item.key %>: <%= item.value %></li>
@@ -282,7 +315,7 @@
                     </div>
                     <div class="actions">
                         <a href="/<%= appName %>/category/<%= category.id %>" class="button">View/Edit</a>
-                        <form action="/<%= appName %>/delete-category" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this Category? (Components & Customer Options will remain)');">
+                        <form action="/<%= appName %>/delete-category" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete Category <%= category.name %> and all its associated Components & Customer Options?');">
                             <input type="hidden" name="id" value="<%= category.id %>">
                             <button type="submit" class="delete">Delete</button>
                         </form>
@@ -301,8 +334,13 @@
             <label for="category_version">Category Version:</label>
             <input type="text" id="category_version" name="category_version" value="1.0.0">
 
-            <label for="category_status">Status (e.g., isApproved, notApproved):</label>
-            <input type="text" id="category_status" name="status" value="notApproved">
+            <label for="add_category_status">Status:</label>
+            <select id="add_category_status" name="status">
+                <option value="notApproved">notApproved</option>
+                <option value="isPending">isPending</option>
+                <option value="isApproved">isApproved</option>
+                <option value="isRetired">isRetired</option>
+            </select>
 
             <label for="governance_record_link">Governance Record Link:</label>
             <input type="text" id="governance_record_link" name="governance_record_link">
@@ -345,8 +383,8 @@
             <h3>Contacts (Key-Value Pairs):</h3>
             <div id="add-contacts-kvp-container">
                 <div class="dynamic-field-row">
-                    <input type="text" name="contacts_key_0" placeholder="Key (e.g., team)">
-                    <input type="text" name="contacts_value_0" placeholder="Value (name/email)">
+                    <input type="text" name="contacts_key_0" placeholder="Key (e.g., Architect)">
+                    <input type="text" name="contacts_value_0" placeholder="Value (name/email)" required>
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 </div>
             </div>
@@ -367,12 +405,34 @@
                         <p><%= component.description %></p>
                         <p><strong>Type:</strong> <%= component.component_type %></p>
                         <p><strong>Category:</strong> <%= component.category_id %></p>
+                        <p><strong>Last Updated:</strong> <%= component.last_updated ? new Date(component.last_updated).toLocaleString('en-GB') : 'N/A' %></p>
+
+                        <div class="sub-component-display">
+                            <% if (component.arr_flags && component.arr_flags.length > 0) { %>
+                                <div><strong>ARR Flags:</strong>
+                                    <ul>
+                                        <% component.arr_flags.forEach(flag => { %>
+                                            <li><a href="<%= flag.link %>" target="_blank"><%= flag.link %></a></li>
+                                        <% }) %>
+                                    </ul>
+                                </div>
+                            <% } %>
+                            <% if (component.risk_flags && component.risk_flags.length > 0) { %>
+                                <div><strong>Risk Flags:</strong>
+                                    <ul>
+                                        <% component.risk_flags.forEach(flag => { %>
+                                            <li><a href="<%= flag.link %>" target="_blank"><%= flag.link %></a></li>
+                                        <% }) %>
+                                    </ul>
+                                </div>
+                            <% } %>
+                        </div>
                     </div>
                     <div class="actions">
                         <a href="/<%= appName %>/component/<%= component.id %>" class="button">View/Edit</a>
-                        <form action="/<%= appName %>/delete-component" method="POST" style="display:inline;">
+                        <form action="/<%= appName %>/delete-component" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete component <%= component.name %> and ALL its versions?');">
                             <input type="hidden" name="id" value="<%= component.id %>">
-                            <button type="submit" class="delete">Delete</button>
+                            <input type="hidden" name="categoryId" value="<%= component.category_id %>"> <button type="submit" class="delete">Delete</button>
                         </form>
                     </div>
                 </div>
@@ -383,39 +443,63 @@
 
         <h2>Add New Component</h2>
         <form action="/<%= appName %>/add-component" method="POST">
-            <label for="component_name">Component Name:</label>
-            <input type="text" id="component_name" name="name" required>
+            <label for="add_component_name">Component Name:</label>
+            <input type="text" id="add_component_name" name="name" required>
 
-            <label for="component_description">Description:</label>
-            <textarea id="component_description" name="description"></textarea>
+            <label for="add_component_description">Description:</label>
+            <textarea id="add_component_description" name="description"></textarea>
 
-            <label for="component_type">Component Type:</label>
-            <input type="text" id="component_type" name="component_type">
+            <label for="add_component_type">Component Type:</label>
+            <input type="text" id="add_component_type" name="component_type">
 
-            <label for="component_label">Component Label:</label>
-            <input type="text" id="component_label" name="component_label">
+            <label for="add_component_label">Component Label:</label>
+            <input type="text" id="add_component_label" name="component_label">
 
-            <label for="component_category_id">Associated Category ID:</label>
-            <input type="text" id="component_category_id" name="category_id" placeholder="e.g., category_nlb" required>
+            <label for="add_component_category_id">Associated Category ID:</label>
+            <input type="text" id="add_component_category_id" name="category_id" placeholder="e.g., category_nlb" required>
+
+            <h3>Flags:</h3>
+            <label for="add_arr_flag">ARR Flags:</label>
+            <div id="add-arr-flags-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="arr_link_0" placeholder="ARR Link">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('flag-link', 'add-arr-flags-container', 'arr_')">Add ARR Flag Link</button>
+
+            <label for="add_risk_flag">Risk Flags:</label>
+            <div id="add-risk-flags-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="risk_link_0" placeholder="Risk Link">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('flag-link', 'add-risk-flags-container', 'risk_')">Add Risk Flag Link</button>
 
             <h3>Initial Version Details:</h3>
-            <label for="version_string">Version String:</label>
-            <input type="text" id="version_string" name="version" value="1.0.0" required>
+            <label for="initial_version_string">Version String:</label>
+            <input type="text" id="initial_version_string" name="version" value="1.0.0" required>
 
-            <label for="lifecycle_status">Lifecycle Status:</label>
-            <input type="text" id="lifecycle_status" name="lifecycle_status" value="active">
+            <label for="initial_lifecycle_status">Lifecycle Status:</label>
+            <select id="initial_lifecycle_status" name="lifecycle_status">
+                <option value="Strategic">Strategic</option>
+                <option value="Niche">Niche</option>
+                <option value="Contain">Contain</option>
+                <option value="Retired">Retired</option>
+            </select>
 
             <h4>Governance:</h4>
-            <label for="governance_status">Status:</label>
-            <input type="text" id="governance_status" name="governance_status" value="approved">
-            <label for="governance_approval_link">Approval Link:</label>
-            <input type="text" id="governance_approval_link" name="governance_approval_link">
+            <label for="initial_governance_status">Status:</label>
+            <input type="text" id="initial_governance_status" name="governance_status" value="approved">
+            <label for="initial_governance_approval_link">Approval Link:</label>
+            <input type="text" id="initial_governance_approval_link" name="governance_approval_link">
 
-            <label for="topology_diagram_link">Topology Diagram Link:</label>
-            <input type="text" id="topology_diagram_link" name="topology_diagram_link">
+            <label for="initial_topology_diagram_link">Topology Diagram Link:</label>
+            <input type="text" id="initial_topology_diagram_link" name="topology_diagram_link">
 
             <h4>Deployment Locations:</h4>
-            <div id="add-deployment-locations-container">
+            <div id="add-component-deployment-locations-container">
                 <div class="dynamic-field-row">
                     <input type="text" name="deployment_site_0" placeholder="Site">
                     <input type="text" name="deployment_zone_0" placeholder="Zone">
@@ -423,29 +507,29 @@
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 </div>
             </div>
-            <button type="button" class="add-field-button" onclick="addDynamicField('deployment-location', 'add-deployment-locations-container', 'deployment_')">Add Deployment Location</button>
+            <button type="button" class="add-field-button" onclick="addDynamicField('deployment-location', 'add-component-deployment-locations-container', 'deployment_')">Add Deployment Location</button>
 
-            <label for="operational_guidelines_link">Operational Guidelines Link:</label>
-            <input type="text" id="operational_guidelines_link" name="operational_guidelines_link">
+            <label for="initial_operational_guidelines_link">Operational Guidelines Link:</label>
+            <input type="text" id="initial_operational_guidelines_link" name="operational_guidelines_link">
 
-            <label for="standards_tags">Standards Tags (comma-separated):</label>
-            <input type="text" id="standards_tags" name="standards_tags">
+            <label for="initial_standards_tags">Standards Tags (comma-separated):</label>
+            <input type="text" id="initial_standards_tags" name="standards_tags">
 
-            <h4>Observability Links (Key-Value Pairs):</h4>
-            <div id="add-observability-links-container">
+            <h4>Observability Links:</h4>
+            <div id="add-component-observability-links-container">
                 <div class="dynamic-field-row">
                     <input type="text" name="obs_key_0" placeholder="Key (e.g., logging)">
                     <input type="text" name="obs_value_0" placeholder="Value (e.g., link)">
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 </div>
             </div>
-            <button type="button" class="add-field-button" onclick="addDynamicField('observability-link', 'add-observability-links-container', 'obs_')">Add Observability Link</button>
+            <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'add-component-observability-links-container', 'obs_')">Add Observability Link</button>
 
-            <label for="base_config_source_link">Base Config Source Link:</label>
-            <input type="text" id="base_config_source_link" name="base_config_source_link">
+            <label for="initial_base_config_source_link">Base Config Source Link:</label>
+            <input type="text" id="initial_base_config_source_link" name="base_config_source_link">
 
-            <label for="supported_capabilities">Supported Capabilities (comma-separated):</label>
-            <input type="text" id="supported_capabilities" name="supported_capabilities">
+            <label for="initial_supported_capabilities">Supported Capabilities (comma-separated):</label>
+            <input type="text" id="initial_supported_capabilities" name="supported_capabilities">
 
             <button type="submit">Add Component with Initial Version</button>
         </form>
@@ -462,12 +546,13 @@
                         <p><strong>Version:</strong> <%= optionSet.customer_option_version %></p>
                         <p><strong>Lifecycle:</strong> <%= optionSet.lifecycle_status %></p>
                         <p><strong>Associated Category:</strong> <%= optionSet.category_id %></p>
+                        <p><strong>Last Updated:</strong> <%= optionSet.last_updated ? new Date(optionSet.last_updated).toLocaleString('en-GB') : 'N/A' %></p>
                     </div>
                     <div class="actions">
                         <a href="/<%= appName %>/customer-options/<%= optionSet.id %>" class="button">View/Edit</a>
-                        <form action="/<%= appName %>/delete-customer-option-set" method="POST" style="display:inline;">
+                        <form action="/<%= appName %>/delete-customer-option-set" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete Customer Option Set <%= optionSet.customer_name %>?');">
                             <input type="hidden" name="id" value="<%= optionSet.id %>">
-                            <button type="submit" class="delete">Delete</button>
+                            <input type="hidden" name="categoryId" value="<%= optionSet.category_id %>"> <button type="submit" class="delete">Delete</button>
                         </form>
                     </div>
                 </div>
@@ -478,29 +563,34 @@
 
         <h2>Add New Customer Option Set</h2>
         <form action="/<%= appName %>/add-customer-option-set" method="POST">
-            <label for="customer_name">Customer Name:</label>
-            <input type="text" id="customer_name" name="customer_name" required>
+            <label for="add_customer_name">Customer Name:</label>
+            <input type="text" id="add_customer_name" name="customer_name" required>
 
-            <label for="customer_option_version">Version:</label>
-            <input type="text" id="customer_option_version" name="customer_option_version" required>
+            <label for="add_customer_option_version">Version:</label>
+            <input type="text" id="add_customer_option_version" name="customer_option_version" required>
 
-            <label for="customer_option_category_id">Associated Category ID:</label>
-            <input type="text" id="customer_option_category_id" name="category_id" placeholder="e.g., category_nlb" required>
+            <label for="add_customer_option_category_id">Associated Category ID:</label>
+            <input type="text" id="add_customer_option_category_id" name="category_id" placeholder="e.g., category_nlb" required>
 
-            <label for="customer_option_lifecycle_status">Lifecycle Status:</label>
-            <input type="text" id="customer_option_lifecycle_status" name="lifecycle_status">
+            <label for="add_customer_option_lifecycle_status">Lifecycle Status:</label>
+            <select id="add_customer_option_lifecycle_status" name="lifecycle_status">
+                <option value="Strategic">Strategic</option>
+                <option value="Niche">Niche</option>
+                <option value="Contain">Contain</option>
+                <option value="Retired">Retired</option>
+            </select>
 
             <h4>Governance:</h4>
-            <label for="customer_option_governance_status">Status:</label>
-            <input type="text" id="customer_option_governance_status" name="governance_status">
-            <label for="customer_option_governance_approval_link">Approval Link:</label>
-            <input type="text" id="customer_option_governance_approval_link" name="governance_approval_link">
+            <label for="add_customer_option_governance_status">Status:</label>
+            <input type="text" id="add_customer_option_governance_status" name="governance_status" value="approved">
+            <label for="add_customer_option_governance_approval_link">Approval Link:</label>
+            <input type="text" id="add_customer_option_governance_approval_link" name="governance_approval_link">
 
-            <label for="guidance_rationale">Guidance / Rationale:</label>
-            <textarea id="guidance_rationale" name="guidance_rationale"></textarea>
+            <label for="add_guidance_rationale">Guidance / Rationale:</label>
+            <textarea id="add_guidance_rationale" name="guidance_rationale"></textarea>
 
-            <label for="capabilities_required">Capabilities Required (comma-separated):</label>
-            <input type="text" id="capabilities_required" name="capabilities_required">
+            <label for="add_capabilities_required">Capabilities Required (comma-separated):</label>
+            <input type="text" id="add_capabilities_required" name="capabilities_required">
 
             <h3>Options:</h3>
             <div id="add-customer-options-container">
@@ -540,7 +630,10 @@
         let addCategoryContactsCount = 1;
         let addComponentDeploymentLocationCount = 1;
         let addComponentObservabilityLinkCount = 1;
+        let addArrFlagCount = 1;
+        let addRiskFlagCount = 1;
         let addCustomerOptionCount = 1;
+
 
         // General purpose function for adding dynamic KVP/Array fields
         function addDynamicField(type, containerId, fieldPrefix) {
@@ -553,37 +646,41 @@
                 currentIndex = addCategoryObservabilityCount++;
             } else if (containerId === 'add-contacts-kvp-container') {
                 currentIndex = addCategoryContactsCount++;
-            } else if (containerId === 'add-deployment-locations-container') {
+            } else if (containerId === 'add-component-deployment-locations-container') {
                 currentIndex = addComponentDeploymentLocationCount++;
-            } else if (containerId === 'add-observability-links-container') {
+            } else if (containerId === 'add-component-observability-links-container') {
                 currentIndex = addComponentObservabilityLinkCount++;
+            } else if (containerId === 'add-arr-flags-container') {
+                currentIndex = addArrFlagCount++;
+            } else if (containerId === 'add-risk-flags-container') {
+                currentIndex = addRiskFlagCount++;
             } else if (containerId === 'add-customer-options-container') {
                 currentIndex = addCustomerOptionCount++;
             } else {
-                // Fallback, though explicit counters are better for complex forms
-                currentIndex = container.children.length;
+                 // Fallback if none of the specific containers match
+                currentIndex = container.children.length; // Fallback, less robust
             }
 
-            if (type === 'kvp') {
+
+            if (type === 'kvp') { // Used for Category Observability and Contacts, Component Observability
                 newRow.innerHTML = `
-                    <input type="text" name="${fieldPrefix}key_${currentIndex}" placeholder="Key (e.g., team)" required>
+                    <input type="text" name="${fieldPrefix}key_${currentIndex}" placeholder="Key" required>
                     <input type="text" name="${fieldPrefix}value_${currentIndex}" placeholder="Value" required>
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 `;
-            } else if (type === 'deployment-location') {
+            } else if (type === 'deployment-location') { // Used for Component Deployment Locations
                 newRow.innerHTML = `
                     <input type="text" name="${fieldPrefix}site_${currentIndex}" placeholder="Site" required>
                     <input type="text" name="${fieldPrefix}zone_${currentIndex}" placeholder="Zone" required>
                     <input type="text" name="${fieldPrefix}segment_${currentIndex}" placeholder="Segment" required>
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 `;
-            } else if (type === 'observability-link') {
+            } else if (type === 'flag-link') { // Used for Component ARR/Risk Flags
                 newRow.innerHTML = `
-                    <input type="text" name="${fieldPrefix}key_${currentIndex}" placeholder="Key (e.g., logging)" required>
-                    <input type="text" name="${fieldPrefix}value_${currentIndex}" placeholder="Value (e.g., link)" required>
+                    <input type="text" name="${fieldPrefix}link_${currentIndex}" placeholder="Link" required>
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 `;
-            } else if (type === 'customer-option') {
+            } else if (type === 'customer-option') { // Used for Customer Option Set Options
                 newRow.innerHTML = `
                     <input type="text" name="${fieldPrefix}name_${currentIndex}" placeholder="Option Name" required>
                     <textarea name="config_pseudocode_${currentIndex}" placeholder="Config Pseudo-code Block"></textarea>
