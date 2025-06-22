@@ -132,7 +132,7 @@
     <div class="container">
         <a href="/<%= appName %>/" class="button">← Back to All APIs</a>
         <h1>Customer Option Set: <%= optionSet.customer_name %></h1>
-        <p><strong>Version:</strong> <%= optionSet.customer_option_version %></p>
+        <p><strong>Associated Category ID:</strong> <%= optionSet.category_id %></p> <p><strong>Version:</strong> <%= optionSet.customer_option_version %></p>
         <p><strong>Lifecycle Status:</strong> <%= optionSet.lifecycle_status %></p>
         <p><strong>Governance Status:</strong> <%= optionSet.governance.status %> (<a href="<%= optionSet.governance.approval_link %>" target="_blank">Approval Link</a>)</p>
         <p><strong>Guidance / Rationale:</strong> <%= optionSet.guidance_rationale %></p>
@@ -148,8 +148,7 @@
         <h2>Edit Customer Option Set</h2>
         <form action="/<%= appName %>/update-customer-option-set" method="POST">
             <input type="hidden" name="id" value="<%= optionSet.id %>">
-
-            <label for="customer_name">Customer Name:</label>
+            <input type="hidden" name="category_id" value="<%= optionSet.category_id %>"> <label for="customer_name">Customer Name:</label>
             <input type="text" id="customer_name" name="customer_name" value="<%= optionSet.customer_name %>" required>
 
             <label for="customer_option_version">Version:</label>
