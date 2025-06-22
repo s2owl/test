@@ -8,7 +8,7 @@ const multer = require('multer');
 // Port: Uses process.env.PORT (for Heroku/PaaS), then APP_PORT, then falls back to 8082
 const port = parseInt(process.env.PORT || process.env['APP_PORT'] || '8082');
 // App Name: Used as a URL prefix, e.g., /design/
-const appName = process.env['APP_NAME'] || 'design'; // Changed default to 'design' based on your URL
+const appName = process.env['APP_NAME'] || 'design'; // Default set to 'design'
 
 const app = express();
 
@@ -80,7 +80,7 @@ const parseStringToArray = (str) => {
     return str ? str.split(',').map(s => s.trim()).filter(s => s !== '') : [];
 };
 
-// Parses dynamic form fields for KVP (key-value pairs)
+// Parses dynamic form fields for generic KVP (key-value pairs like contacts, observability)
 const parseKVP = (body, prefix = '') => {
     const items = [];
     let i = 0;
@@ -93,6 +93,20 @@ const parseKVP = (body, prefix = '') => {
     }
     return items;
 };
+
+// Parses dynamic form fields for flag links (e.g., arr_link_0, risk_link_0)
+const parseFlagLinks = (body, prefix = '') => {
+    const links = [];
+    let i = 0;
+    while (body[`${prefix}link_${i}`]) {
+        links.push({
+            link: body[`${prefix}link_${i}`] || ''
+        });
+        i++;
+    }
+    return links;
+};
+
 
 // Parses dynamic form fields for deployment locations (e.g., deployment_site_0, deployment_zone_0)
 const parseDeploymentLocations = (body, prefix = 'deployment_') => {
@@ -130,12 +144,11 @@ const filterData = (query) => {
     let allData = readData();
     let results = [];
 
-    // Combine all potential top-level items into a single flat structure for easier iteration
-    // This deep-clones to avoid modifying the original data during filtering
+    // Deep clone all data to allow modification for filtering (e.g., removing non-matching versions)
     const allEntities = JSON.parse(JSON.stringify(allData));
 
     allEntities.forEach(entity => {
-        let entityMatch = false;
+        let entityMatch = false; // Tracks if the top-level entity itself matches any direct query
 
         // --- Filter Categories ---
         if (entity.type === "Category") {
@@ -146,7 +159,7 @@ const filterData = (query) => {
             if (query.categoryStatus && entity.status.toLowerCase() === query.categoryStatus.toLowerCase()) {
                 entityMatch = true;
             }
-            // General text search for Category (name, rationale, links, KVP values)
+            // General text search for Category (name, rationale, links, KVP values, library tags)
             const categorySearchableText = `${entity.name || ''} ${entity.rationale || ''} ${entity.status || ''} ` +
                                           `${entity.governance_record_link || ''} ${entity.topology_view_link || ''} ` +
                                           `${entity.roadmap_link || ''} ${entity.fsa_link || ''} ` +
@@ -160,21 +173,16 @@ const filterData = (query) => {
             if (query.keyword && categorySearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
                 entityMatch = true;
             }
-             if (query.searchText && categorySearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
+            if (query.searchText && categorySearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
                 entityMatch = true;
             }
 
-
-            // Filter its associated Components and Customer Options (if no specific component/customer option queries are made, include all)
-            const originalComponents = allEntities.filter(item => item.type === "Component" && item.category_id === entity.id);
-            const originalCustomerOptions = allEntities.filter(item => item.type === "CustomerOptionSet" && item.category_id === entity.id);
-
-            // Temporarily store filtered children to avoid direct modification of original structure
-            const filteredComponents = [];
-            const filteredCustomerOptions = [];
+            // Temporarily store filtered children for this category
+            const filteredComponentsForCategory = [];
+            const filteredCustomerOptionsForCategory = [];
 
             // --- Filter Components associated with this Category ---
-            originalComponents.forEach(component => {
+            allEntities.filter(item => item.type === "Component" && item.category_id === entity.id).forEach(component => {
                 let componentMatch = false;
                 const componentFilteredVersions = [];
 
@@ -188,15 +196,22 @@ const filterData = (query) => {
                 if (query.componentLabel && component.component_label.toLowerCase() === query.componentLabel.toLowerCase()) {
                     componentMatch = true;
                 }
-
+                // Check ARR/Risk flags
+                if (query.arrFlag && component.arr_flags && component.arr_flags.length > 0) {
+                    componentMatch = true;
+                }
+                if (query.riskFlag && component.risk_flags && component.risk_flags.length > 0) {
+                    componentMatch = true;
+                }
                 // General text search for Component (name, description, label)
                 const componentSearchableText = `${component.name || ''} ${component.description || ''} ${component.component_type || ''} ${component.component_label || ''}`;
-                 if (query.keyword && componentSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
+                if (query.keyword && componentSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
                     componentMatch = true;
                 }
-                 if (query.searchText && componentSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
+                if (query.searchText && componentSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
                     componentMatch = true;
                 }
+
 
                 // Filter its component_versions
                 component.component_versions.forEach(version => {
@@ -261,17 +276,17 @@ const filterData = (query) => {
                 });
 
                 // If component (or any of its versions) matches, add it to the filtered results
+                // Conditionally include based on whether specific child queries were made or if component/version matched.
                 if (componentFilteredVersions.length > 0 || (componentMatch && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue'].includes(k)))) {
-                    // Create a clone with only the matched versions
                     const clonedComponent = { ...component, component_versions: componentFilteredVersions };
-                    filteredComponents.push(clonedComponent);
+                    filteredComponentsForCategory.push(clonedComponent);
                     entityMatch = true; // Category matches if an associated component matches
                 }
             });
 
 
             // --- Filter Customer Option Sets associated with this Category ---
-            originalCustomerOptions.forEach(optionSet => {
+            allEntities.filter(item => item.type === "CustomerOptionSet" && item.category_id === entity.id).forEach(optionSet => {
                 let optionSetMatch = false;
 
                 // Apply customer option set filters
@@ -318,7 +333,7 @@ const filterData = (query) => {
 
 
                 if (optionSetMatch) {
-                    filteredCustomerOptions.push(optionSet); // Add the entire matching option set
+                    filteredCustomerOptionsForCategory.push(optionSet); // Add the entire matching option set
                     entityMatch = true; // Category matches if an associated customer option set matches
                 }
             });
@@ -326,46 +341,40 @@ const filterData = (query) => {
 
             // Add Category to final results if it or any of its associated components/customer options matched
             // If only category-level query params are present, just match the category itself.
-            const hasComponentOrCustomerOptionQueries = Object.keys(query).some(k =>
-                ['componentName', 'componentType', 'componentLabel', 'version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue', 'keyword', 'customerName', 'customerOptionVersion', 'customerLifecycleStatus', 'customerGovernanceStatus', 'customerCapabilityRequired', 'optionName', 'pseudocodeKeyword'].includes(k)
+            // This logic is designed to return a category if it matches a category-level query OR if any of its children match a child-level query.
+            const hasCategorySpecificQueries = Object.keys(query).some(k => ['categoryName', 'categoryStatus'].includes(k));
+            const hasChildSpecificQueries = Object.keys(query).some(k =>
+                ['componentName', 'componentType', 'componentLabel', 'version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue', 'keyword', 'customerName', 'customerOptionVersion', 'customerLifecycleStatus', 'customerGovernanceStatus', 'customerCapabilityRequired', 'optionName', 'pseudocodeKeyword', 'arrFlag', 'riskFlag'].includes(k)
             );
 
-            if (entityMatch) {
-                // If the entity itself or its children matched, and no specific child queries were made
-                // or the children matched the specific queries, add the category with its filtered children.
+            if (entityMatch || (hasCategorySpecificQueries && !hasChildSpecificQueries)) { // Match if entity itself matched OR if category-specific query used without child query
                 const clonedCategory = {
                     ...entity,
-                    components: filteredComponents,
-                    customer_options: filteredCustomerOptions
+                    components: filteredComponentsForCategory, // Attach filtered components
+                    customer_options: filteredCustomerOptionsForCategory // Attach filtered customer options
                 };
                 results.push(clonedCategory);
             }
         }
         // --- End Filter Categories ---
 
-        // --- Filter Components (if categoryId is explicitly queried OR no categoryName/Status query) ---
-        // This handles cases where user searches directly for a component not necessarily linked via category query
-        if (entity.type === "Component" && !query.categoryName && !query.categoryStatus) {
+        // --- Filter Components (top-level, if not already included via Category filter or no category query) ---
+        // This ensures components are returned directly if they match a component-specific query
+        // AND are not already included because their category matched.
+        if (entity.type === "Component" && (!query.categoryName && !query.categoryStatus)) {
             let componentMatchDirect = false;
             const componentFilteredVersions = [];
 
-             // Apply component-level filters (similar to above but for direct match)
-            if (query.componentName && entity.name.toLowerCase().includes(query.componentName.toLowerCase())) {
-                componentMatchDirect = true;
-            }
-            if (query.componentType && entity.component_type.toLowerCase() === query.componentType.toLowerCase()) {
-                componentMatchDirect = true;
-            }
-            if (query.componentLabel && entity.component_label.toLowerCase() === query.componentLabel.toLowerCase()) {
-                componentMatchDirect = true;
-            }
+            // Apply component-level filters (similar to above but for direct match)
+            if (query.componentName && entity.name.toLowerCase().includes(query.componentName.toLowerCase())) { componentMatchDirect = true; }
+            if (query.componentType && entity.component_type.toLowerCase() === query.componentType.toLowerCase()) { componentMatchDirect = true; }
+            if (query.componentLabel && entity.component_label.toLowerCase() === query.componentLabel.toLowerCase()) { componentMatchDirect = true; }
+            if (query.arrFlag && entity.arr_flags && entity.arr_flags.length > 0) { componentMatchDirect = true; }
+            if (query.riskFlag && entity.risk_flags && entity.risk_flags.length > 0) { componentMatchDirect = true; }
             const componentSearchableText = `${entity.name || ''} ${entity.description || ''} ${entity.component_type || ''} ${entity.component_label || ''}`;
-            if (query.keyword && componentSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
-                componentMatchDirect = true;
-            }
-            if (query.searchText && componentSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
-                componentMatchDirect = true;
-            }
+            if (query.keyword && componentSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) { componentMatchDirect = true; }
+            if (query.searchText && componentSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) { componentMatchDirect = true; }
+
 
             entity.component_versions.forEach(version => {
                 let versionMatch = false;
@@ -402,12 +411,15 @@ const filterData = (query) => {
 
             if (componentFilteredVersions.length > 0 || (componentMatchDirect && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue'].includes(k)))) {
                 const clonedComponent = { ...entity, component_versions: componentFilteredVersions };
-                results.push(clonedComponent);
+                // Only add if it's not already covered by a matching category
+                if (!results.some(r => r.type === "Category" && r.components && r.components.some(c => c.id === clonedComponent.id))) {
+                    results.push(clonedComponent);
+                }
             }
         }
         // --- End Filter Components ---
 
-        // --- Filter CustomerOptionSets (if no categoryName/Status query) ---
+        // --- Filter CustomerOptionSets (top-level, if not already included via Category filter or no category query) ---
         if (entity.type === "CustomerOptionSet" && !query.categoryName && !query.categoryStatus) {
             let optionSetMatchDirect = false;
 
@@ -434,7 +446,10 @@ const filterData = (query) => {
             if (query.searchText && optionSetSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) { optionSetMatchDirect = true; }
 
             if (optionSetMatchDirect) {
-                results.push(entity);
+                // Only add if it's not already covered by a matching category
+                if (!results.some(r => r.type === "Category" && r.customer_options && r.customer_options.some(cos => cos.id === entity.id))) {
+                    results.push(entity);
+                }
             }
         }
         // --- End Filter CustomerOptionSets ---
@@ -468,8 +483,8 @@ app.get(`/${appName}/`, (req, res) => {
 app.get(`/${appName}/category/:categoryId`, (req, res) => {
     const allData = readData();
     const category = allData.find(item => item.id === req.params.categoryId && item.type === "Category");
-    const allComponents = allData.filter(item => item.type === "Component");
-    const allCustomerOptionSets = allData.filter(item => item.type === "CustomerOptionSet");
+    const allComponents = allData.filter(item => item.type === "Component"); // Pass all components for filtering in EJS
+    const allCustomerOptionSets = allData.filter(item => item.type === "CustomerOptionSet"); // Pass all customer options to EJS
 
     if (!category) {
         return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Category not found.'));
@@ -493,7 +508,6 @@ app.get(`/${appName}/component/:componentId`, (req, res) => {
     }
     // For now, redirect to home with a message or return JSON
     res.redirect(`/${appName}/?message=` + encodeURIComponent(`Component "${component.name}" details will be here. (ID: ${component.id})`));
-    // Alternatively, for testing, you could do: res.json(component);
     // In a full app, you'd render a dedicated component_detail.ejs here.
 });
 
@@ -531,7 +545,8 @@ app.post(`/${appName}/add-category`, (req, res) => {
         fsa_link: req.body.fsa_link || '',
         fsa_library_tags: parseStringToArray(req.body.fsa_library_tags),
         observability_kvp: parseKVP(req.body, 'observability_'),
-        contacts_kvp: parseKVP(req.body, 'contacts_')
+        contacts_kvp: parseKVP(req.body, 'contacts_'),
+        last_updated: new Date().toISOString() // Add timestamp
     };
     allData.push(newCategory);
     writeData(allData);
@@ -549,7 +564,7 @@ app.post(`/${appName}/add-component`, (req, res) => {
 
     const newComponentVersion = {
         version: req.body.version || '1.0.0',
-        lifecycle_status: req.body.lifecycle_status || 'active',
+        lifecycle_status: req.body.lifecycle_status || 'active', // Should align with new values
         governance: {
             status: req.body.governance_status || 'draft',
             approval_link: req.body.governance_approval_link || ''
@@ -567,10 +582,13 @@ app.post(`/${appName}/add-component`, (req, res) => {
         id: 'comp_' + Date.now().toString().slice(-6),
         type: "Component", // Explicitly set type
         category_id: req.body.category_id, // Link to category
-        name: req.body.name || 'New Component', // Note: Renamed from comp_name in EJS
-        description: req.body.description || '', // Note: Renamed from comp_description in EJS
+        name: req.body.name || 'New Component',
+        description: req.body.description || '',
         component_type: req.body.component_type || 'service',
-        component_label: req.body.component_label || 'strategic',
+        component_label: req.body.component_label || 'strategic', // Should align with new values
+        arr_flags: parseFlagLinks(req.body, 'arr_'), // Parse ARR flags
+        risk_flags: parseFlagLinks(req.body, 'risk_'), // Parse Risk flags
+        last_updated: new Date().toISOString(), // Add timestamp
         component_versions: [newComponentVersion] // Initialize with the first version
     };
 
@@ -585,14 +603,13 @@ app.post(`/${appName}/component/:componentId/add-version`, (req, res) => {
     const component = allData.find(item => item.id === req.params.componentId && item.type === "Component");
 
     if (!component) {
-        // If component not found, try to redirect to category if categoryId is available, else home
         const redirectPath = req.body.categoryId ? `/${appName}/category/${req.body.categoryId}` : `/${appName}/`;
         return res.redirect(redirectPath + `?message=` + encodeURIComponent('Error: Component not found for adding version.'));
     }
 
     const newComponentVersion = {
         version: req.body.version || '1.0.0',
-        lifecycle_status: req.body.lifecycle_status || 'active',
+        lifecycle_status: req.body.lifecycle_status || 'active', // Should align with new values
         governance: {
             status: req.body.governance_status || 'draft',
             approval_link: req.body.governance_approval_link || ''
@@ -614,6 +631,7 @@ app.post(`/${appName}/component/:componentId/add-version`, (req, res) => {
     }
 
     component.component_versions.push(newComponentVersion);
+    component.last_updated = new Date().toISOString(); // Update component timestamp when version added
     writeData(allData);
     const redirectPath = req.body.categoryId ? `/${appName}/category/${req.body.categoryId}` : `/${appName}/`;
     res.redirect(redirectPath + `?message=` + encodeURIComponent('New version added to component!'));
@@ -634,14 +652,15 @@ app.post(`/${appName}/add-customer-option-set`, (req, res) => {
         category_id: req.body.category_id, // Link to category
         customer_name: req.body.customer_name || 'New Customer',
         customer_option_version: req.body.customer_option_version || '1.0.0',
-        lifecycle_status: req.body.lifecycle_status || 'active',
+        lifecycle_status: req.body.lifecycle_status || 'active', // Should align with new values
         governance: {
             status: req.body.governance_status || 'draft',
             approval_link: req.body.governance_approval_link || ''
         },
         guidance_rationale: req.body.guidance_rationale || '',
         capabilities_required: parseStringToArray(req.body.capabilities_required),
-        options: parseCustomerOptions(req.body)
+        options: parseCustomerOptions(req.body),
+        last_updated: new Date().toISOString() // Add timestamp
     };
     allData.push(newCustomerOptionSet); // Add as top-level
     writeData(allData);
@@ -660,7 +679,7 @@ app.post(`/${appName}/update-category`, (req, res) => {
     if (categoryIndex > -1) {
         allData[categoryIndex].category_version = category_version;
         allData[categoryIndex].name = name;
-        allData[categoryIndex].status = status;
+        allData[categoryIndex].status = status; // Should align with new values
         allData[categoryIndex].governance_record_link = governance_record_link;
         allData[categoryIndex].topology_view_link = topology_view_link;
         allData[categoryIndex].rationale = rationale;
@@ -672,6 +691,7 @@ app.post(`/${appName}/update-category`, (req, res) => {
         allData[categoryIndex].fsa_library_tags = parseStringToArray(req.body.fsa_library_tags);
         allData[categoryIndex].observability_kvp = parseKVP(req.body, 'observability_');
         allData[categoryIndex].contacts_kvp = parseKVP(req.body, 'contacts_');
+        allData[categoryIndex].last_updated = new Date().toISOString(); // Update timestamp
 
         writeData(allData);
         res.redirect(`/${appName}/category/${id}/?message=` + encodeURIComponent('Category updated successfully!'));
@@ -691,7 +711,7 @@ app.post(`/${appName}/update-customer-option-set`, (req, res) => {
         allData[optionSetIndex].category_id = category_id; // Ensure category_id is preserved/updated
         allData[optionSetIndex].customer_name = customer_name;
         allData[optionSetIndex].customer_option_version = customer_option_version;
-        allData[optionSetIndex].lifecycle_status = lifecycle_status;
+        allData[optionSetIndex].lifecycle_status = lifecycle_status; // Should align with new values
         allData[optionSetIndex].governance = {
             status: governance_status || 'draft',
             approval_link: governance_approval_link || ''
@@ -699,6 +719,7 @@ app.post(`/${appName}/update-customer-option-set`, (req, res) => {
         allData[optionSetIndex].guidance_rationale = guidance_rationale;
         allData[optionSetIndex].capabilities_required = parseStringToArray(capabilities_required);
         allData[optionSetIndex].options = parseCustomerOptions(req.body); // Re-parse all options
+        allData[optionSetIndex].last_updated = new Date().toISOString(); // Update timestamp
 
         writeData(allData);
         // Redirect back to the category page if possible, else home
@@ -771,6 +792,7 @@ app.post(`/${appName}/component/:componentId/version/:versionString/delete`, (re
     component.component_versions = component.component_versions.filter(v => v.version !== req.params.versionString);
 
     if (component.component_versions.length < initialVersionCount) {
+        component.last_updated = new Date().toISOString(); // Update component timestamp
         writeData(allData);
         const redirectPath = categoryId ? `/${appName}/category/${categoryId}` : `/${appName}/`;
         res.redirect(redirectPath + `?message=` + encodeURIComponent('Component version deleted successfully!'));
