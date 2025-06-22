@@ -449,6 +449,7 @@ const filterData = (query) => {
 // Home page: Displays list of Categories, Components, and Customer Option Sets
 app.get(`/${appName}/`, (req, res) => {
     const allData = readData();
+    // Filter allData into specific types for rendering in index.ejs
     const categories = allData.filter(item => item.type === "Category");
     const components = allData.filter(item => item.type === "Component");
     const customerOptionSets = allData.filter(item => item.type === "CustomerOptionSet");
@@ -463,11 +464,12 @@ app.get(`/${appName}/`, (req, res) => {
 });
 
 // Route to view a specific Category and its associated Components/Customer Option Sets
+// Passes ALL components and ALL customer option sets to EJS for client-side filtering by category_id
 app.get(`/${appName}/category/:categoryId`, (req, res) => {
     const allData = readData();
     const category = allData.find(item => item.id === req.params.categoryId && item.type === "Category");
-    const allComponents = allData.filter(item => item.type === "Component"); // Pass all components for filtering in EJS
-    const allCustomerOptionSets = allData.filter(item => item.type === "CustomerOptionSet"); // Pass all customer options for filtering in EJS
+    const allComponents = allData.filter(item => item.type === "Component");
+    const allCustomerOptionSets = allData.filter(item => item.type === "CustomerOptionSet");
 
     if (!category) {
         return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Category not found.'));
@@ -475,8 +477,8 @@ app.get(`/${appName}/category/:categoryId`, (req, res) => {
     // Render the category_detail.ejs template
     res.render('category_detail', {
         category: category,
-        allComponents: allComponents, // Pass all components to EJS to allow filtering by category_id
-        allCustomerOptionSets: allCustomerOptionSets, // Pass all customer options to EJS
+        allComponents: allComponents, // Passed to EJS for filtering by category_id
+        allCustomerOptionSets: allCustomerOptionSets, // Passed to EJS for filtering by category_id
         message: req.query.message || null,
         appName: appName
     });
@@ -489,11 +491,10 @@ app.get(`/${appName}/component/:componentId`, (req, res) => {
     if (!component) {
         return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Component not found.'));
     }
-    // Placeholder: In a full app, you'd render a component_detail.ejs here.
-    // For now, let's just return JSON or redirect with an info message.
-    //res.json(component); // Or render a dedicated component_detail.ejs
-    res.redirect(`/${appName}/?message=` + encodeURIComponent(`Component "${component.name}" found. Detail page not implemented yet. Displaying JSON for testing.`));
-
+    // For now, redirect to home with a message or return JSON
+    res.redirect(`/${appName}/?message=` + encodeURIComponent(`Component "${component.name}" details will be here. (ID: ${component.id})`));
+    // Alternatively, for testing, you could do: res.json(component);
+    // In a full app, you'd render a dedicated component_detail.ejs here.
 });
 
 
