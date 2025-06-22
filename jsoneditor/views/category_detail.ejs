@@ -142,7 +142,15 @@
         .add-field-button:hover {
             background-color: #0056b3;
         }
-
+        /* Style for the Edit Category form (hidden by default) */
+        .edit-category-form {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #b3d9ff;
+            background-color: #e0f2ff;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -157,6 +165,8 @@
         <p><strong>Rationale:</strong> <%= category.rationale %></p>
         <p><strong>Roadmap Link:</strong> <a href="<%= category.roadmap_link %>" target="_blank"><%= category.roadmap_link %></a></p>
         <p><strong>FSA Link:</strong> <a href="<%= category.fsa_link %>" target="_blank"><%= category.fsa_link %></a></p>
+        <p><strong>Last Updated:</strong> <%= category.last_updated ? new Date(category.last_updated).toLocaleString('en-GB') : 'N/A' %></p>
+
 
         <div class="sub-component-display">
             <% if (category.guidelines_library_tags && category.guidelines_library_tags.length > 0) { %>
@@ -191,12 +201,100 @@
             <% } %>
         </div>
 
+        <div class="actions">
+            <button onclick="toggleEditCategoryForm()">Edit Category Details</button>
+        </div>
+
+        <div class="edit-category-form" id="edit-category-form">
+            <h2>Edit Category Details</h2>
+            <form action="/<%= appName %>/update-category" method="POST">
+                <input type="hidden" name="id" value="<%= category.id %>">
+
+                <label for="edit_category_name">Category Name:</label>
+                <input type="text" id="edit_category_name" name="name" value="<%= category.name %>" required>
+
+                <label for="edit_category_version">Category Version:</label>
+                <input type="text" id="edit_category_version" name="category_version" value="<%= category.category_version %>">
+
+                <label for="edit_category_status">Status:</label>
+                <select id="edit_category_status" name="status">
+                    <option value="notApproved" <%= category.status === 'notApproved' ? 'selected' : '' %>>notApproved</option>
+                    <option value="isPending" <%= category.status === 'isPending' ? 'selected' : '' %>>isPending</option>
+                    <option value="isApproved" <%= category.status === 'isApproved' ? 'selected' : '' %>>isApproved</option>
+                    <option value="isRetired" <%= category.status === 'isRetired' ? 'selected' : '' %>>isRetired</option>
+                </select>
+
+                <label for="edit_governance_record_link">Governance Record Link:</label>
+                <input type="text" id="edit_governance_record_link" name="governance_record_link" value="<%= category.governance_record_link %>">
+
+                <label for="edit_topology_view_link">Topology View Link:</label>
+                <input type="text" id="edit_topology_view_link" name="topology_view_link" value="<%= category.topology_view_link %>">
+
+                <label for="edit_rationale">Rationale:</label>
+                <textarea id="edit_rationale" name="rationale"><%= category.rationale %></textarea>
+
+                <label for="edit_roadmap_link">Roadmap Link:</label>
+                <input type="text" id="edit_roadmap_link" name="roadmap_link" value="<%= category.roadmap_link %>">
+
+                <label for="edit_fsa_link">FSA Link:</label>
+                <input type="text" id="edit_fsa_link" name="fsa_link" value="<%= category.fsa_link %>">
+
+                <h3>Library Tags (comma-separated):</h3>
+                <label for="edit_guidelines_library_tags">Guidelines:</label>
+                <input type="text" id="edit_guidelines_library_tags" name="guidelines_library_tags" value="<%= category.guidelines_library_tags.join(', ') %>">
+
+                <label for="edit_controls_alignments_library_tags">Controls Alignments:</label>
+                <input type="text" id="edit_controls_alignments_library_tags" name="controls_alignments_library_tags" value="<%= category.controls_alignments_library_tags.join(', ') %>">
+
+                <label for="edit_standards_library_tags">Standards:</label>
+                <input type="text" id="edit_standards_library_tags" name="standards_library_tags" value="<%= category.standards_library_tags.join(', ') %>">
+
+                <label for="edit_fsa_library_tags">FSA Library Tags:</label>
+                <input type="text" id="edit_fsa_library_tags" name="fsa_library_tags" value="<%= category.fsa_library_tags.join(', ') %>">
+
+                <h3>Observability (Key-Value Pairs):</h3>
+                <div id="edit-observability-kvp-container">
+                    <% if (category.observability_kvp && category.observability_kvp.length > 0) { %>
+                        <% category.observability_kvp.forEach((item, index) => { %>
+                            <div class="dynamic-field-row">
+                                <input type="text" name="observability_key_<%= index %>" placeholder="Key" value="<%= item.key %>" required>
+                                <input type="text" name="observability_value_<%= index %>" placeholder="Value" value="<%= item.value %>" required>
+                                <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                            </div>
+                        <% }) %>
+                    <% } %>
+                </div>
+                <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'edit-observability-kvp-container', 'observability_', <%= category.observability_kvp ? category.observability_kvp.length : 0 %>)">Add Observability Link</button>
+
+                <h3>Contacts (Key-Value Pairs):</h3>
+                <div id="edit-contacts-kvp-container">
+                    <% if (category.contacts_kvp && category.contacts_kvp.length > 0) { %>
+                        <% category.contacts_kvp.forEach((item, index) => { %>
+                            <div class="dynamic-field-row">
+                                <input type="text" name="contacts_key_<%= index %>" placeholder="Key" value="<%= item.key %>" required>
+                                <input type="text" name="contacts_value_<%= index %>" placeholder="Value" value="<%= item.value %>" required>
+                                <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                            </div>
+                        <% }) %>
+                    <% } %>
+                </div>
+                <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'edit-contacts-kvp-container', 'contacts_', <%= category.contacts_kvp ? category.contacts_kvp.length : 0 %>)">Add Contact</button>
+
+
+                <button type="submit">Save Category Changes</button>
+                <button type="button" class="button" onclick="toggleEditCategoryForm()">Cancel</button>
+            </form>
+        </div>
+
 
         <% if (message) { %>
             <div class="message <%= message.includes('Error') ? 'error' : '' %>">
                 <%= message %>
             </div>
         <% } %>
+
+        <hr style="margin: 30px 0; border: 0; border-top: 1px dashed #ccc;">
+
 
         <h2>Associated Components</h2>
         <%
@@ -211,6 +309,28 @@
                         <p><strong>Description:</strong> <%= component.description %></p>
                         <p><strong>Type:</strong> <%= component.component_type %></p>
                         <p><strong>Label:</strong> <%= component.component_label %></p>
+                        <p><strong>Last Updated:</strong> <%= component.last_updated ? new Date(component.last_updated).toLocaleString('en-GB') : 'N/A' %></p>
+
+                        <div class="sub-component-display">
+                            <% if (component.arr_flags && component.arr_flags.length > 0) { %>
+                                <div><strong>ARR Flags:</strong>
+                                    <ul>
+                                        <% component.arr_flags.forEach(flag => { %>
+                                            <li><a href="<%= flag.link %>" target="_blank"><%= flag.link %></a></li>
+                                        <% }) %>
+                                    </ul>
+                                </div>
+                            <% } %>
+                            <% if (component.risk_flags && component.risk_flags.length > 0) { %>
+                                <div><strong>Risk Flags:</strong>
+                                    <ul>
+                                        <% component.risk_flags.forEach(flag => { %>
+                                            <li><a href="<%= flag.link %>" target="_blank"><%= flag.link %></a></li>
+                                        <% }) %>
+                                    </ul>
+                                </div>
+                            <% } %>
+                        </div>
 
                         <h4>Component Versions:</h4>
                         <% if (component.component_versions && component.component_versions.length > 0) { %>
@@ -223,8 +343,7 @@
                                             <span style="float: right;">
                                                 <button disabled title="Full dynamic edit form is complex to implement with plain EJS/JS.">Edit Version (WIP)</button>
                                                 <form action="/<%= appName %>/component/<%= component.id %>/version/<%= version.version %>/delete" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete version <%= version.version %>?');">
-                                                    <input type="hidden" name="categoryId" value="<%= category.id %>"> <!-- Pass category ID -->
-                                                    <button type="submit" class="delete">Delete Version</button>
+                                                    <input type="hidden" name="categoryId" value="<%= category.id %>"> <button type="submit" class="delete">Delete Version</button>
                                                 </form>
                                             </span>
                                         </summary>
@@ -269,16 +388,19 @@
                             <p>No versions defined for this component.</p>
                         <% } %>
 
-                        <!-- Form to Add a New Version to an Existing Component -->
                         <div style="margin-top: 20px; padding: 15px; border: 1px dashed #ddd; border-radius: 5px; background-color: #fafafa;">
                             <h4>Add New Version to <%= component.name %>:</h4>
                             <form action="/<%= appName %>/component/<%= component.id %>/add-version" method="POST">
-                                <input type="hidden" name="categoryId" value="<%= category.id %>"> <!-- Pass category ID -->
-                                <label for="new_version_string_<%= component.id %>">Version String:</label>
+                                <input type="hidden" name="categoryId" value="<%= category.id %>"> <label for="new_version_string_<%= component.id %>">Version String:</label>
                                 <input type="text" id="new_version_string_<%= component.id %>" name="version" required>
 
                                 <label for="new_lifecycle_status_<%= component.id %>">Lifecycle Status:</label>
-                                <input type="text" id="new_lifecycle_status_<%= component.id %>" name="lifecycle_status" value="active">
+                                <select id="new_lifecycle_status_<%= component.id %>" name="lifecycle_status">
+                                    <option value="Strategic">Strategic</option>
+                                    <option value="Niche">Niche</option>
+                                    <option value="Contain">Contain</option>
+                                    <option value="Retired">Retired</option>
+                                </select>
 
                                 <h5>Governance:</h5>
                                 <label for="new_governance_status_<%= component.id %>">Status:</label>
@@ -298,7 +420,7 @@
                                         <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                                     </div>
                                 </div>
-                                <button type="button" class="add-field-button" onclick="addDynamicField('deployment-location', 'new-version-deployment-locations-container-<%= component.id %>', 'new_version_deployment_')">Add Deployment Location</button>
+                                <button type="button" class="add-field-button" onclick="addDynamicField('deployment-location', 'new-version-deployment-locations-container-<%= component.id %>', 'new_version_deployment_', 0, 'version')">Add Deployment Location</button>
 
                                 <label for="new_operational_guidelines_link_<%= component.id %>">Operational Guidelines Link:</label>
                                 <input type="text" id="new_operational_guidelines_link_<%= component.id %>" name="operational_guidelines_link">
@@ -314,7 +436,7 @@
                                         <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                                     </div>
                                 </div>
-                                <button type="button" class="add-field-button" onclick="addDynamicField('observability-link', 'new-version-observability-links-container-<%= component.id %>', 'new_version_obs_')">Add Observability Link</button>
+                                <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'new-version-observability-links-container-<%= component.id %>', 'new_version_obs_', 0, 'version')">Add Observability Link</button>
 
                                 <label for="new_base_config_source_link_<%= component.id %>">Base Config Source Link:</label>
                                 <input type="text" id="new_base_config_source_link_<%= component.id %>" name="base_config_source_link">
@@ -329,8 +451,7 @@
                     <div class="actions">
                         <form action="/<%= appName %>/delete-component" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete component <%= component.name %> and ALL its versions?');">
                             <input type="hidden" name="id" value="<%= component.id %>">
-                            <input type="hidden" name="categoryId" value="<%= category.id %>"> <!-- Pass category ID -->
-                            <button type="submit" class="delete">Delete Component</button>
+                            <input type="hidden" name="categoryId" value="<%= category.id %>"> <button type="submit" class="delete">Delete Component</button>
                         </form>
                     </div>
                 </div>
@@ -341,26 +462,48 @@
 
         <h2>Add New Component</h2>
         <form action="/<%= appName %>/add-component" method="POST">
-            <input type="hidden" name="category_id" value="<%= category.id %>"> <!-- Auto-fill category_id -->
+            <input type="hidden" name="category_id" value="<%= category.id %>"> <label for="add_component_name">Component Name:</label>
+            <input type="text" id="add_component_name" name="name" required>
 
-            <label for="component_name">Component Name:</label>
-            <input type="text" id="component_name" name="name" required>
+            <label for="add_component_description">Description:</label>
+            <textarea id="add_component_description" name="description"></textarea>
 
-            <label for="component_description">Description:</label>
-            <textarea id="component_description" name="description"></textarea>
+            <label for="add_component_type">Component Type:</label>
+            <input type="text" id="add_component_type" name="component_type">
 
-            <label for="component_type">Component Type:</label>
-            <input type="text" id="component_type" name="component_type">
+            <label for="add_component_label">Component Label:</label>
+            <input type="text" id="add_component_label" name="component_label">
 
-            <label for="component_label">Component Label:</label>
-            <input type="text" id="component_label" name="component_label">
+            <h3>Flags:</h3>
+            <label for="add_arr_flag">ARR Flags:</label>
+            <div id="add-arr-flags-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="arr_link_0" placeholder="ARR Link">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('flag-link', 'add-arr-flags-container', 'arr_')">Add ARR Flag Link</button>
+
+            <label for="add_risk_flag">Risk Flags:</label>
+            <div id="add-risk-flags-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="risk_link_0" placeholder="Risk Link">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('flag-link', 'add-risk-flags-container', 'risk_')">Add Risk Flag Link</button>
 
             <h3>Initial Version Details:</h3>
             <label for="initial_version_string">Version String:</label>
             <input type="text" id="initial_version_string" name="version" value="1.0.0" required>
 
             <label for="initial_lifecycle_status">Lifecycle Status:</label>
-            <input type="text" id="initial_lifecycle_status" name="lifecycle_status" value="active">
+            <select id="initial_lifecycle_status" name="lifecycle_status">
+                <option value="Strategic">Strategic</option>
+                <option value="Niche">Niche</option>
+                <option value="Contain">Contain</option>
+                <option value="Retired">Retired</option>
+            </select>
 
             <h4>Governance:</h4>
             <label for="initial_governance_status">Status:</label>
@@ -396,7 +539,7 @@
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 </div>
             </div>
-            <button type="button" class="add-field-button" onclick="addDynamicField('observability-link', 'add-component-observability-links-container', 'obs_')">Add Observability Link</button>
+            <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'add-component-observability-links-container', 'obs_')">Add Observability Link</button>
 
             <label for="initial_base_config_source_link">Base Config Source Link:</label>
             <input type="text" id="initial_base_config_source_link" name="base_config_source_link">
@@ -422,14 +565,14 @@
                         <h3><%= optionSet.customer_name %></h3>
                         <p><strong>Version:</strong> <%= optionSet.customer_option_version %></p>
                         <p><strong>Lifecycle:</strong> <%= optionSet.lifecycle_status %></p>
-                        <p><strong>Rationale:</strong> <%= optionSet.guidance_rationale %></p>
+                        <p><strong>Associated Category:</strong> <%= optionSet.category_id %></p>
+                        <p><strong>Last Updated:</strong> <%= optionSet.last_updated ? new Date(optionSet.last_updated).toLocaleString('en-GB') : 'N/A' %></p>
                     </div>
                     <div class="actions">
                         <a href="/<%= appName %>/customer-options/<%= optionSet.id %>" class="button">View/Edit</a>
-                        <form action="/<%= appName %>/delete-customer-option-set" method="POST" style="display:inline;">
+                        <form action="/<%= appName %>/delete-customer-option-set" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete Customer Option Set <%= optionSet.customer_name %>?');">
                             <input type="hidden" name="id" value="<%= optionSet.id %>">
-                            <input type="hidden" name="categoryId" value="<%= category.id %>"> <!-- Pass category ID -->
-                            <button type="submit" class="delete">Delete</button>
+                            <input type="hidden" name="categoryId" value="<%= optionSet.category_id %>"> <button type="submit" class="delete">Delete</button>
                         </form>
                     </div>
                 </div>
@@ -440,20 +583,23 @@
 
         <h2>Add New Customer Option Set for This Category</h2>
         <form action="/<%= appName %>/add-customer-option-set" method="POST">
-            <input type="hidden" name="category_id" value="<%= category.id %>"> <!-- Auto-fill category_id -->
-
-            <label for="add_customer_name">Customer Name:</label>
+            <input type="hidden" name="category_id" value="<%= category.id %>"> <label for="add_customer_name">Customer Name:</label>
             <input type="text" id="add_customer_name" name="customer_name" required>
 
             <label for="add_customer_option_version">Version:</label>
             <input type="text" id="add_customer_option_version" name="customer_option_version" required>
 
             <label for="add_customer_option_lifecycle_status">Lifecycle Status:</label>
-            <input type="text" id="add_customer_option_lifecycle_status" name="lifecycle_status">
+            <select id="add_customer_option_lifecycle_status" name="lifecycle_status">
+                <option value="Strategic">Strategic</option>
+                <option value="Niche">Niche</option>
+                <option value="Contain">Contain</option>
+                <option value="Retired">Retired</option>
+            </select>
 
             <h4>Governance:</h4>
             <label for="add_customer_option_governance_status">Status:</label>
-            <input type="text" id="add_customer_option_governance_status" name="governance_status">
+            <input type="text" id="add_customer_option_governance_status" name="governance_status" value="approved">
             <label for="add_customer_option_governance_approval_link">Approval Link:</label>
             <input type="text" id="add_customer_option_governance_approval_link" name="governance_approval_link">
 
@@ -480,56 +626,82 @@
 
     <script>
         // Trackers for dynamic field indices (per form, generally)
-        let newVersionDeploymentLocationCount = 1; // For add-version forms
-        let newVersionObservabilityLinkCount = 1;
-        let addComponentDeploymentLocationCount = 1; // For initial add-component form
+        let addCategoryObservabilityCount = <%= category.observability_kvp ? category.observability_kvp.length : 1 %>;
+        let addCategoryContactsCount = <%= category.contacts_kvp ? category.contacts_kvp.length : 1 %>;
+
+        // Initialize for add component form on this page
+        let addComponentDeploymentLocationCount = 1; 
         let addComponentObservabilityLinkCount = 1;
-        let addCustomerOptionCount = 1; // For add-customer-option-set form (on this page)
+        let addArrFlagCount = 1; 
+        let addRiskFlagCount = 1; 
+
+        // Initialize for add customer option set form on this page
+        let addCustomerOptionCount = 1; 
 
 
         // General purpose function for adding dynamic KVP/Array fields
         // Note: The prefixes for dynamically added fields in add-version forms are different
         // from those in the initial add-component form (e.g., 'new_version_deployment_' vs 'deployment_').
         // This function must use the correct prefix for the specific form it's called from.
-        function addDynamicField(type, containerId, fieldPrefix) {
+        // It now takes an optional 'initialIndex' if pre-populating an edit form.
+        function addDynamicField(type, containerId, fieldPrefix, initialIndex = 0, context = 'add') {
             const container = document.getElementById(containerId);
             const newRow = document.createElement('div');
             newRow.className = 'dynamic-field-row';
 
             let currentIndex;
             // Determine current index based on the container ID for more reliable unique naming
-            if (containerId.includes('new-version-deployment-locations-container')) {
-                currentIndex = container.dataset.locationCount || 0; // Start at 0 if no data-attr
-                container.dataset.locationCount = parseInt(currentIndex) + 1; // Update for next use
-            } else if (containerId.includes('new-version-observability-links-container')) {
-                currentIndex = container.dataset.observabilityCount || 0;
-                container.dataset.observabilityCount = parseInt(currentIndex) + 1;
+            // and separate counters for different forms on the same page.
+            if (context === 'version') { // For add-version forms (which can be multiple on page)
+                currentIndex = container.dataset.nextIndex || initialIndex; // Use dataset for unique tracking per version form
+                container.dataset.nextIndex = parseInt(currentIndex) + 1; // Update for next use
+            } else if (containerId === 'add-observability-kvp-container') {
+                currentIndex = addCategoryObservabilityCount++;
+            } else if (containerId === 'add-contacts-kvp-container') {
+                currentIndex = addCategoryContactsCount++;
             } else if (containerId === 'add-component-deployment-locations-container') {
                 currentIndex = addComponentDeploymentLocationCount++;
             } else if (containerId === 'add-component-observability-links-container') {
                 currentIndex = addComponentObservabilityLinkCount++;
+            } else if (containerId === 'add-arr-flags-container') {
+                currentIndex = addArrFlagCount++;
+            } else if (containerId === 'add-risk-flags-container') {
+                currentIndex = addRiskFlagCount++;
             } else if (containerId === 'add-customer-options-container') {
                 currentIndex = addCustomerOptionCount++;
-            } else {
+            } else if (containerId === 'edit-observability-kvp-container') {
+                // For edit forms, ensure the initialIndex is used then increment
+                currentIndex = container.dataset.nextIndexForEdit || initialIndex;
+                container.dataset.nextIndexForEdit = parseInt(currentIndex) + 1;
+            } else if (containerId === 'edit-contacts-kvp-container') {
+                currentIndex = container.dataset.nextIndexForEdit || initialIndex;
+                container.dataset.nextIndexForEdit = parseInt(currentIndex) + 1;
+            }
+            else {
                  // Fallback if none of the specific containers match
-                currentIndex = container.children.length;
+                currentIndex = container.children.length; // Fallback, less robust for multiple forms
             }
 
 
-            if (type === 'deployment-location') {
+            if (type === 'kvp') { // Used for Category Observability and Contacts, Component Observability (in add/edit forms)
+                newRow.innerHTML = `
+                    <input type="text" name="${fieldPrefix}key_${currentIndex}" placeholder="Key" required>
+                    <input type="text" name="${fieldPrefix}value_${currentIndex}" placeholder="Value" required>
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                `;
+            } else if (type === 'deployment-location') { // Used for Component Deployment Locations (in add/edit forms)
                 newRow.innerHTML = `
                     <input type="text" name="${fieldPrefix}site_${currentIndex}" placeholder="Site" required>
                     <input type="text" name="${fieldPrefix}zone_${currentIndex}" placeholder="Zone" required>
                     <input type="text" name="${fieldPrefix}segment_${currentIndex}" placeholder="Segment" required>
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 `;
-            } else if (type === 'observability-link') {
+            } else if (type === 'flag-link') { // Used for Component ARR/Risk Flags (in add/edit forms)
                 newRow.innerHTML = `
-                    <input type="text" name="${fieldPrefix}key_${currentIndex}" placeholder="Key (e.g., logging)" required>
-                    <input type="text" name="${fieldPrefix}value_${currentIndex}" placeholder="Value (e.g., link)" required>
+                    <input type="text" name="${fieldPrefix}link_${currentIndex}" placeholder="Link" required>
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 `;
-            } else if (type === 'customer-option') {
+            } else if (type === 'customer-option') { // Used for Customer Option Set Options (in add/edit forms)
                 newRow.innerHTML = `
                     <input type="text" name="${fieldPrefix}name_${currentIndex}" placeholder="Option Name" required>
                     <textarea name="config_pseudocode_${currentIndex}" placeholder="Config Pseudo-code Block"></textarea>
@@ -539,13 +711,41 @@
             container.appendChild(newRow);
         }
 
-        // IMPORTANT: The 'Edit Component Version' functionality for dynamically added fields
-        // requires significant client-side JavaScript to:
-        // 1. Fetch the existing data for the version.
-        // 2. Dynamically create and pre-populate the input fields (including multiple rows for arrays).
-        // 3. Handle adding/removing fields during an edit session.
-        // This is typically managed much more efficiently and robustly with a client-side framework
-        // like React, Vue, or Angular, or a more sophisticated vanilla JS approach for form management.
+        // Toggle Edit Category Form
+        function toggleEditCategoryForm() {
+            const form = document.getElementById('edit-category-form');
+            if (form.style.display === 'none' || form.style.display === '') {
+                form.style.display = 'block';
+                // Hide view-only details and edit button when form is open
+                document.querySelector('.container > p:nth-of-type(2)').style.display = 'none'; // Version
+                document.querySelector('.container > p:nth-of-type(3)').style.display = 'none'; // Status
+                document.querySelector('.container > p:nth-of-type(4)').style.display = 'none'; // Governance
+                document.querySelector('.container > p:nth-of-type(5)').style.display = 'none'; // Topology
+                document.querySelector('.container > p:nth-of-type(6)').style.display = 'none'; // Rationale
+                document.querySelector('.container > p:nth-of-type(7)').style.display = 'none'; // Roadmap
+                document.querySelector('.container > p:nth-of-type(8)').style.display = 'none'; // FSA
+                document.querySelector('.container > p:nth-of-type(9)').style.display = 'none'; // Last Updated
+                document.querySelector('.sub-component-display').style.display = 'none'; // All KVP/tags
+                document.querySelector('.actions button').style.display = 'none'; // The 'Edit Category Details' button
+            } else {
+                form.style.display = 'none';
+                // Show view-only details and edit button when form is closed
+                document.querySelector('.container > p:nth-of-type(2)').style.display = 'block';
+                document.querySelector('.container > p:nth-of-type(3)').style.display = 'block';
+                document.querySelector('.container > p:nth-of-type(4)').style.display = 'block';
+                document.querySelector('.container > p:nth-of-type(5)').style.display = 'block';
+                document.querySelector('.container > p:nth-of-type(6)').style.display = 'block';
+                document.querySelector('.container > p:nth-of-type(7)').style.display = 'block';
+                document.querySelector('.container > p:nth-of-type(8)').style.display = 'block';
+                document.querySelector('.container > p:nth-of-type(9)').style.display = 'block';
+                document.querySelector('.sub-component-display').style.display = 'block';
+                document.querySelector('.actions button').style.display = 'inline-block';
+            }
+        }
+
+        // IMPORTANT: The 'Edit Component Version' functionality is still a WIP.
+        // Dynamic generation and pre-population for editing deep nested data in plain JS is very complex.
+        // For a full implementation, a client-side framework (React, Vue) is highly recommended.
         // For now, the 'Edit Version' buttons are disabled in the HTML.
     </script>
 </body>
