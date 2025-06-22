@@ -1,197 +1,562 @@
 [
   {
-    "id": "parent_api_network_core",
-    "name": "Core Network API",
-    "description": "Central API for managing core network infrastructure, facilitating service discovery and routing.",
-    "parent_label": "strategic",
-    "components": [
+    "id": "category_nlb",
+    "type": "Category",
+    "category_version": "1.0.0",
+    "name": "Network Load Balancer",
+    "status": "isApproved",
+    "governance_record_link": "https://jira.example.com/tickets/NLB-GOV-001",
+    "topology_view_link": "https://confluence.example.com/network/nlb-topology.png",
+    "rationale": "Standardized approach for load balancing network traffic to internal services, ensuring high availability and scalability.",
+    "guidelines_library_tags": ["internal-lb-best-practices", "traffic-routing-principles"],
+    "controls_alignments_library_tags": ["security-control-matrix-v1", "compliance-framework-gdrp"],
+    "standards_library_tags": ["RFC7540-HTTP2", "TLS1.3-Standard"],
+    "roadmap_link": "https://confluence.example.com/network/nlb-roadmap",
+    "fsa_link": "https://intranet.example.com/fsa/nlb-assessment.pdf",
+    "fsa_library_tags": ["risk-assessment-methodology-v2"],
+    "observability_kvp": [
+      {"key": "dashboard", "value": "https://grafana.example.com/d/nlb-overview"},
+      {"key": "logs", "value": "https://kibana.example.com/logs?query=loadbalancer"},
+      {"key": "alerts", "value": "https://pagerduty.example.com/service/nlb-alerts"}
+    ],
+    "contacts_kvp": [
+      {"key": "team", "value": "Network Core Engineering"},
+      {"key": "slack", "value": "#network-lb-support"}
+    ]
+  },
+  {
+    "id": "comp_f5_ltm",
+    "type": "Component",
+    "category_id": "category_nlb",
+    "name": "F5 LTM",
+    "description": "Traditional hardware-based Load Traffic Manager for advanced traffic management.",
+    "component_type": "hardware-appliance",
+    "component_label": "strategic",
+    "component_versions": [
       {
-        "id": "comp_router_mgmt_svc",
-        "name": "Router Management Service",
-        "description": "Handles configuration and monitoring of network routers across all environments.",
-        "component_type": "service",
-        "component_label": "critical",
-        "component_versions": [
-          {
-            "version": "1.2.5",
-            "lifecycle_status": "active",
-            "governance": {
-              "status": "approved",
-              "approval_link": "https://jira.example.com/browse/ROUTERMGMT-123"
-            },
-            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/Router+Mgmt+Topology+v1.2.5",
-            "deployment_locations": [
-              {"site": "London-DC1", "zone": "DMZ-A", "segment": "Public-Facing"},
-              {"site": "Dublin-DR", "zone": "DMZ-A", "segment": "Public-Facing"}
-            ],
-            "operational_guidelines_link": "https://docs.example.com/router-mgmt-ops-guide-v1.2.5",
-            "standards_tags": ["RFC1234", "ISO27001", "NIST800-53"],
-            "observability_links": [
-              {"key": "logging", "value": "https://kibana.example.com/logs?query=router-mgmt-v1.2.5"},
-              {"key": "monitoring", "value": "https://grafana.example.com/d/router-mgmt-v1.2.5"}
-            ],
-            "base_config_source_link": "https://github.com/network-configs/router-mgmt/blob/main/base_v1.2.5.yml",
-            "supported_capabilities": ["router-config-api", "firmware-update", "snmp-polling", "bgp-routing"]
-          },
-          {
-            "version": "1.2.0",
-            "lifecycle_status": "deprecated",
-            "governance": {
-              "status": "approved",
-              "approval_link": "https://jira.example.com/browse/ROUTERMGMT-567"
-            },
-            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/Router+Mgmt+Topology+v1.2.0",
-            "deployment_locations": [
-              {"site": "London-DC1", "zone": "DMZ-A", "segment": "Public-Facing"}
-            ],
-            "operational_guidelines_link": "https://docs.example.com/router-mgmt-ops-guide-v1.2.0",
-            "standards_tags": ["RFC1234"],
-            "observability_links": [],
-            "base_config_source_link": "https://github.com/network-configs/router-mgmt/blob/main/base_v1.2.0.yml",
-            "supported_capabilities": ["router-config-api"]
-          }
-        ]
-      },
-      {
-        "id": "comp_dns_resolver_svc",
-        "name": "DNS Resolver Service",
-        "description": "Provides internal and external DNS resolution for all connected services.",
-        "component_type": "service",
-        "component_label": "critical",
-        "component_versions": [
-          {
-            "version": "2.1.0",
-            "lifecycle_status": "active",
-            "governance": {
-              "status": "approved",
-              "approval_link": "https://jira.example.com/browse/DNS-RES-001"
-            },
-            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/DNS+Resolver+Topology+v2.1.0",
-            "deployment_locations": [
-              {"site": "London-DC1", "zone": "Internal-A", "segment": "Service-Mesh"},
-              {"site": "Dublin-DR", "zone": "Internal-B", "segment": "Service-Mesh"}
-            ],
-            "operational_guidelines_link": "https://docs.example.com/dns-resolver-ops-guide-v2.1.0",
-            "standards_tags": ["RFC1035"],
-            "observability_links": [
-              {"key": "metrics", "value": "https://prometheus.example.com/d/dns-resolver"}
-            ],
-            "base_config_source_link": "https://github.com/network-configs/dns-resolver/blob/main/base_v2.1.0.conf",
-            "supported_capabilities": ["dns-forwarding", "caching", "dnssec"]
-          }
-        ]
+        "version": "15.1.0",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/F5-LTM-001" },
+        "topology_diagram_link": "https://confluence.example.com/f5/ltm-v15-deployment.png",
+        "deployment_locations": [
+          {"site": "Internal-DC1", "zone": "Core-Network", "segment": "Private-Services"},
+          {"site": "Internal-DC2", "zone": "Core-Network", "segment": "Private-Services"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/f5-ltm-ops-guide",
+        "standards_tags": ["PCI-DSS", "NIST800-53"],
+        "observability_links": [
+          {"key": "metrics", "value": "https://splunk.example.com/dashboards/f5-ltm"},
+          {"key": "snmp_data", "value": "https://monitoring.example.com/snmp-f5"}
+        ],
+        "base_config_source_link": "https://github.com/network-configs/f5-ltm/base_v15.1.0.conf",
+        "supported_capabilities": ["layer-7-lb", "ssl-offload", "web-application-firewall"]
       }
     ]
   },
   {
-    "id": "parent_api_security",
-    "name": "Network Security API",
-    "description": "API set for managing network security policies, firewalls, and access controls.",
-    "parent_label": "strategic",
-    "components": [
+    "id": "comp_avi_lb",
+    "type": "Component",
+    "category_id": "category_nlb",
+    "name": "AVI Networks Load Balancer",
+    "description": "Software-defined application delivery controller, integrated with cloud platforms.",
+    "component_type": "software-defined",
+    "component_label": "strategic",
+    "component_versions": [
       {
-        "id": "comp_firewall_policy_eng",
-        "name": "Firewall Policy Engine Core",
-        "description": "Core logic for firewall policy evaluation and enforcement across network zones.",
-        "component_type": "engine",
-        "component_label": "strategic",
-        "component_versions": [
-          {
-            "version": "2.0.0",
-            "lifecycle_status": "active",
-            "governance": {
-              "status": "approved",
-              "approval_link": "https://jira.example.com/browse/FWENGINE-001"
-            },
-            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/FW+Engine+Topology+v2.0.0",
-            "deployment_locations": [
-              {"site": "Manchester-DC2", "zone": "Internal-Network", "segment": "Sensitive-Data"}
-            ],
-            "operational_guidelines_link": "https://docs.example.com/fw-engine-ops-guide-v2.0.0",
-            "standards_tags": ["NIST800-53", "PCI-DSS"],
-            "observability_links": [
-              {"key": "flow_logs", "value": "https://splunk.example.com/logs?query=firewall-engine"},
-              {"key": "health_check", "value": "https://pingdom.example.com/fw-engine"}
-            ],
-            "base_config_source_link": "https://github.com/network-configs/fw-engine/blob/main/base_v2.0.0.json",
-            "supported_capabilities": ["policy-definition", "acl-management", "ip-filtering"]
-          }
-        ]
-      },
-      {
-        "id": "comp_proxy_gw",
-        "name": "Secure Proxy Gateway",
-        "description": "Provides secure outbound and inbound proxy services, including SSL interception.",
-        "component_type": "gateway",
-        "component_label": "critical",
-        "component_versions": [
-          {
-            "version": "1.0.0",
-            "lifecycle_status": "active",
-            "governance": {
-              "status": "approved",
-              "approval_link": "https://jira.example.com/browse/PROXY-GW-001"
-            },
-            "topology_diagram_link": "https://confluence.example.com/display/NETARCH/Secure+Proxy+GW+Topology+v1.0.0",
-            "deployment_locations": [
-              {"site": "London-DC1", "zone": "Edge-Network", "segment": "Internet-DMZ"}
-            ],
-            "operational_guidelines_link": "https://docs.example.com/secure-proxy-gw-ops-guide-v1.0.0",
-            "standards_tags": ["ISO27001", "SOC2"],
-            "observability_links": [
-              {"key": "traffic_logs", "value": "https://elastic.example.com/proxy-traffic"},
-              {"key": "ssl_metrics", "value": "https://datadog.example.com/ssl-proxy-metrics"}
-            ],
-            "base_config_source_link": "https://github.com/network-configs/proxy-gw/blob/main/base_v1.0.0.conf",
-            "supported_capabilities": ["http-proxy", "https-proxy", "ssl-interception", "reverse-proxy", "load-balancing"]
-          }
-        ]
+        "version": "20.1.5",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/AVI-LB-002" },
+        "topology_diagram_link": "https://confluence.example.com/avi/deployment-v20.png",
+        "deployment_locations": [
+          {"site": "Internal-Cloud-AZ1", "zone": "App-Zone-A", "segment": "Internal-Microservices"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/avi-lb-ops-guide",
+        "standards_tags": ["Cloud-Native-Best-Practices"],
+        "observability_links": [
+          {"key": "controller-metrics", "value": "https://avi-controller.example.com/analytics"},
+          {"key": "service-engine-logs", "value": "https://splunk.example.com/logs?query=avi-se"}
+        ],
+        "base_config_source_link": "https://github.com/network-configs/avi-lb/base_v20.1.5.json",
+        "supported_capabilities": ["load-balancing-as-code", "global-server-lb", "analytics"]
       }
     ]
   },
   {
-    "id": "customer_opt_retail_basic_v1",
+    "id": "comp_nginx_lb",
+    "type": "Component",
+    "category_id": "category_nlb",
+    "name": "NGINX Load Balancer",
+    "description": "Lightweight and high-performance software web server and reverse proxy, used for basic load balancing.",
+    "component_type": "software-proxy",
+    "component_label": "niche",
+    "component_versions": [
+      {
+        "version": "1.20.0",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/NGINX-LB-003" },
+        "topology_diagram_link": "https://confluence.example.com/nginx/basic-lb-diagram.png",
+        "deployment_locations": [
+          {"site": "Internal-Cloud-AZ2", "zone": "Web-Tier", "segment": "Front-End-Services"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/nginx-lb-ops-guide",
+        "standards_tags": ["HTTP-Standard"],
+        "observability_links": [
+          {"key": "access_logs", "value": "https://kibana.example.com/logs?query=nginx-access"},
+          {"key": "error_logs", "value": "https://kibana.example.com/logs?query=nginx-error"}
+        ],
+        "base_config_source_link": "https://github.com/network-configs/nginx-lb/base_v1.20.0.conf",
+        "supported_capabilities": ["reverse-proxy", "basic-load-balancing", "ssl-termination"]
+      }
+    ]
+  },
+  {
+    "id": "custopt_ordered_list",
     "type": "CustomerOptionSet",
-    "customer_name": "RetailCo Basic Network Config",
+    "category_id": "category_nlb",
+    "customer_name": "Load Balancer: Ordered List",
     "customer_option_version": "1.0.0",
     "lifecycle_status": "active",
-    "governance": {
-      "status": "approved",
-      "approval_link": "https://jira.example.com/browse/CUSTOPT-RET-001"
-    },
-    "guidance_rationale": "Standard network configuration overrides for basic RetailCo deployments, focusing on logging and default access levels.",
-    "capabilities_required": ["router-config-api", "http-proxy"],
+    "governance": { "status": "approved", "approval_link": "https://jira.example.com/LB-OPT-OL-001" },
+    "guidance_rationale": "Directs traffic sequentially to servers based on a predefined order.",
+    "capabilities_required": ["layer-7-lb"],
     "options": [
       {
-        "option_name": "Router Management Logs Verbosity",
-        "config_block_pseudocode": "componentId: 'comp_router_mgmt_svc', configKey: 'logLevel', value: 'DEBUG'"
-      },
-      {
-        "option_name": "Default API Rate Limit (RetailCo)",
-        "config_block_pseudocode": "componentId: 'comp_router_mgmt_svc', configKey: 'apiRateLimit', value: 500"
+        "option_name": "Ordered List Server Priority",
+        "config_block_pseudocode": "COMPONENT_TAG: 'load_balancer', PROTOCOL: 'HTTP', TRAFFIC_STRATEGY: 'ORDERED_LIST', SERVERS: ['serverA_IP', 'serverB_IP', 'serverC_IP'], FALLBACK_ACTION: 'FAIL_CLOSED'"
       }
     ]
   },
   {
-    "id": "customer_opt_enterprise_high_sec_v2",
+    "id": "custopt_round_robin",
     "type": "CustomerOptionSet",
-    "customer_name": "EnterpriseCorp High-Security Profile",
-    "customer_option_version": "2.0.0",
+    "category_id": "category_nlb",
+    "customer_name": "Load Balancer: Round Robin",
+    "customer_option_version": "1.0.0",
     "lifecycle_status": "active",
-    "governance": {
-      "status": "approved",
-      "approval_link": "https://jira.example.com/browse/CUSTOPT-ENT-002"
-    },
-    "guidance_rationale": "Advanced security configurations for EnterpriseCorp, enforcing strict policy controls and mandatory SSL inspection for all traffic.",
-    "capabilities_required": ["acl-management", "ssl-interception"],
+    "governance": { "status": "approved", "approval_link": "https://jira.example.com/LB-OPT-RR-002" },
+    "guidance_rationale": "Distributes incoming traffic sequentially to a group of servers.",
+    "capabilities_required": ["layer-7-lb"],
     "options": [
       {
-        "option_name": "Firewall Default Action (EnterpriseCorp)",
-        "config_block_pseudocode": "componentId: 'comp_firewall_policy_eng', configKey: 'defaultAction', value: 'DENY'"
+        "option_name": "Round Robin Distribution",
+        "config_block_pseudocode": "COMPONENT_TAG: 'load_balancer', PROTOCOL: 'HTTP', TRAFFIC_STRATEGY: 'ROUND_ROBIN', SERVER_POOL: 'web_servers_pool_1'"
+      }
+    ]
+  },
+  {
+    "id": "custopt_least_used",
+    "type": "CustomerOptionSet",
+    "category_id": "category_nlb",
+    "customer_name": "Load Balancer: Least Used",
+    "customer_option_version": "1.0.0",
+    "lifecycle_status": "active",
+    "governance": { "status": "approved", "approval_link": "https://jira.example.com/LB-OPT-LU-003" },
+    "guidance_rationale": "Directs traffic to the server with the fewest active connections or requests.",
+    "capabilities_required": ["layer-7-lb", "connection-metrics"],
+    "options": [
+      {
+        "option_name": "Least Used Server Selection",
+        "config_block_pseudocode": "COMPONENT_TAG: 'load_balancer', PROTOCOL: 'TCP', TRAFFIC_STRATEGY: 'LEAST_USED_CONNECTIONS', SERVER_POOL: 'db_servers_pool_2'"
+      }
+    ]
+  },
+  {
+    "id": "custopt_weighted_round_robin",
+    "type": "CustomerOptionSet",
+    "category_id": "category_nlb",
+    "customer_name": "Load Balancer: Weighted Round Robin",
+    "customer_option_version": "1.0.0",
+    "lifecycle_status": "active",
+    "governance": { "status": "approved", "approval_link": "https://jira.example.com/LB-OPT-WRR-004" },
+    "guidance_rationale": "Distributes traffic based on server weights, allowing preferred servers to receive more traffic.",
+    "capabilities_required": ["layer-7-lb", "server-weights"],
+    "options": [
+      {
+        "option_name": "Weighted Round Robin Traffic Distribution",
+        "config_block_pseudocode": "COMPONENT_TAG: 'load_balancer', PROTOCOL: 'HTTPS', TRAFFIC_STRATEGY: 'WEIGHTED_ROUND_ROBIN', SERVER_WEIGHTS: [{'serverA_IP': 3}, {'serverB_IP': 1}]"
+      }
+    ]
+  },
+  {
+    "id": "category_forward_proxies",
+    "type": "Category",
+    "category_version": "1.0.0",
+    "name": "Forward Proxies",
+    "status": "isApproved",
+    "governance_record_link": "https://jira.example.com/tickets/FWD-PROXY-GOV-001",
+    "topology_view_link": "https://confluence.example.com/network/forward-proxy-topology.png",
+    "rationale": "Provides secure and compliant internet access for internal users and systems.",
+    "guidelines_library_tags": ["proxy-deployment-guide", "internet-access-policy"],
+    "controls_alignments_library_tags": ["data-loss-prevention", "access-control-standards"],
+    "standards_library_tags": ["NIST800-53", "PCI-DSS"],
+    "roadmap_link": "https://confluence.example.com/network/forward-proxy-roadmap",
+    "fsa_link": "https://intranet.example.com/fsa/forward-proxy-assessment.pdf",
+    "fsa_library_tags": ["security-risk-assessment-v3"],
+    "observability_kvp": [
+      {"key": "traffic_dashboard", "value": "https://grafana.example.com/d/proxy-traffic"},
+      {"key": "audit_logs", "value": "https://splunk.example.com/logs?query=proxy-audit"}
+    ],
+    "contacts_kvp": [
+      {"key": "team", "value": "Security Engineering"},
+      {"key": "email", "value": "security-proxy@example.com"}
+    ]
+  },
+  {
+    "id": "comp_bluecoat_proxy",
+    "type": "Component",
+    "category_id": "category_forward_proxies",
+    "name": "Bluecoat ProxySG",
+    "description": "Enterprise-grade hardware proxy for on-premise deployments, covering various user groups.",
+    "component_type": "hardware-proxy",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "6.7.5",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/BC-PROXY-001" },
+        "topology_diagram_link": "https://confluence.example.com/bluecoat/proxysg-deployment.png",
+        "deployment_locations": [
+          {"site": "Internal-DC1", "zone": "DMZ-Internal", "segment": "Staff-Network"},
+          {"site": "Internal-DC2", "zone": "DMZ-Internal", "segment": "Server-Network"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/bluecoat-proxysg-ops",
+        "standards_tags": ["PCI-DSS", "ISO27001"],
+        "observability_links": [
+          {"key": "console", "value": "https://bluecoat-mgt.example.com/console"},
+          {"key": "av_logs", "value": "https://splunk.example.com/logs?query=bluecoat-av"}
+        ],
+        "base_config_source_link": "https://github.com/proxy-configs/bluecoat/base_v6.7.5.conf",
+        "supported_capabilities": ["url-filtering", "av-scanning", "ssl-interception", "content-caching", "user-group-policies"]
+      }
+    ]
+  },
+  {
+    "id": "comp_zscaler_proxy",
+    "type": "Component",
+    "category_id": "category_forward_proxies",
+    "name": "ZScaler Internet Access (ZIA)",
+    "description": "Cloud-native security platform for secure web gateways, covering remote users and SaaS applications.",
+    "component_type": "cloud-proxy",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "NA",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/ZS-ZIA-002" },
+        "topology_diagram_link": "https://confluence.example.com/zscaler/zia-deployment.png",
+        "deployment_locations": [
+          {"site": "Global-Cloud", "zone": "Edge-PoP", "segment": "Remote-User-Access"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/zscaler-zia-ops",
+        "standards_tags": ["Cloud-Security-Alliance", "GDPR"],
+        "observability_links": [
+          {"key": "admin_portal", "value": "https://admin.zscaler.net"},
+          {"key": "logs", "value": "https://splunk.example.com/logs?query=zscaler-zia"}
+        ],
+        "base_config_source_link": "https://zscaler.example.com/api-config-export",
+        "supported_capabilities": ["secure-web-gateway", "dlp", "cloud-firewall", "m365-optimization", "crowdstrike-integration"]
+      }
+    ]
+  },
+  {
+    "id": "category_dns",
+    "type": "Category",
+    "category_version": "1.0.0",
+    "name": "DNS Management",
+    "status": "isApproved",
+    "governance_record_link": "https://jira.example.com/tickets/DNS-GOV-001",
+    "topology_view_link": "https://confluence.example.com/network/dns-topology.png",
+    "rationale": "Centralized management of internal and external DNS resolution for all services and users.",
+    "guidelines_library_tags": ["dns-best-practices", "zone-management-policy"],
+    "controls_alignments_library_tags": ["dns-security-controls", "network-segmentation"],
+    "standards_library_tags": ["RFC1035", "DNSSEC-Standard"],
+    "roadmap_link": "https://confluence.example.com/network/dns-roadmap",
+    "fsa_link": "https://intranet.example.com/fsa/dns-assessment.pdf",
+    "fsa_library_tags": ["network-service-risk-assessment"],
+    "observability_kvp": [
+      {"key": "health_dashboard", "value": "https://grafana.example.com/d/dns-health"},
+      {"key": "query_logs", "value": "https://kibana.example.com/logs?query=dns-queries"}
+    ],
+    "contacts_kvp": [
+      {"key": "team", "value": "Network Core Services"},
+      {"key": "phone", "value": "+44 1234 567890"}
+    ]
+  },
+  {
+    "id": "comp_qip_dns",
+    "type": "Component",
+    "category_id": "category_dns",
+    "name": "QIP Internal DNS/DHCP",
+    "description": "On-premise IP Address Management (IPAM), DNS, and DHCP solution for internal networks.",
+    "component_type": "ipam-solution",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "9.0.0",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/QIP-DNS-001" },
+        "topology_diagram_link": "https://confluence.example.com/qip/internal-dns-dhcp.png",
+        "deployment_locations": [
+          {"site": "Internal-DC1", "zone": "Management-Network", "segment": "Core-IPAM"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/qip-ops-guide",
+        "standards_tags": ["RFC2131-DHCP", "RFC2136-DDNS"],
+        "observability_links": [
+          {"key": "admin_gui", "value": "https://qip-admin.example.com"},
+          {"key": "syslog", "value": "https://splunk.example.com/logs?query=qip"}
+        ],
+        "base_config_source_link": "https://github.com/dns-configs/qip/base_v9.0.0.conf",
+        "supported_capabilities": ["ipam", "dns-internal-resolution", "dhcp-management", "ddns"]
+      }
+    ]
+  },
+  {
+    "id": "comp_efficientip_dns",
+    "type": "Component",
+    "category_id": "category_dns",
+    "name": "Efficient IP Internal DNS/DHCP",
+    "description": "Integrated DDI (DNS, DHCP, IPAM) solution for highly available internal network services.",
+    "component_type": "ddi-solution",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "8.0.0",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/EIP-DNS-002" },
+        "topology_diagram_link": "https://confluence.example.com/efficientip/ddi-internal.png",
+        "deployment_locations": [
+          {"site": "Internal-DC2", "zone": "Management-Network", "segment": "Core-DDI"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/efficientip-ops-guide",
+        "standards_tags": ["DNSSEC-Standard"],
+        "observability_links": [
+          {"key": "dashboards", "value": "https://efficientip-mgt.example.com/dashboard"},
+          {"key": "alerts", "value": "https://pagerduty.example.com/efficientip-alerts"}
+        ],
+        "base_config_source_link": "https://github.com/dns-configs/efficientip/base_v8.0.0.conf",
+        "supported_capabilities": ["dns-internal-resolution", "dhcp-management", "ipam-automation", "dns-firewall"]
+      }
+    ]
+  },
+  {
+    "id": "comp_f5_gtm",
+    "type": "Component",
+    "category_id": "category_dns",
+    "name": "F5 GTM (Global Traffic Manager)",
+    "description": "Provides global server load balancing (GSLB) and intelligent DNS resolution for disaster recovery and performance.",
+    "component_type": "gslb-solution",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "16.0.0",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/F5-GTM-003" },
+        "topology_diagram_link": "https://confluence.example.com/f5/gtm-gslb-diagram.png",
+        "deployment_locations": [
+          {"site": "Internal-DC1", "zone": "GSLB-Tier", "segment": "Global-Services"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/f5-gtm-ops-guide",
+        "standards_tags": ["GSLB-Principles"],
+        "observability_links": [
+          {"key": "bigiq_analytics", "value": "https://bigiq.example.com/analytics/gtm"}
+        ],
+        "base_config_source_link": "https://github.com/dns-configs/f5-gtm/base_v16.0.0.conf",
+        "supported_capabilities": ["gslb", "dns-load-balancing", "health-monitoring", "wide-ip-management"]
+      }
+    ]
+  },
+  {
+    "id": "comp_infoblox_external_dns",
+    "type": "Component",
+    "category_id": "category_dns",
+    "name": "Infoblox External DNS",
+    "description": "External authoritative DNS services for public-facing domains.",
+    "component_type": "external-dns-provider",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "8.4.0",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/IB-EXT-DNS-004" },
+        "topology_diagram_link": "https://confluence.example.com/infoblox/external-dns-deployment.png",
+        "deployment_locations": [
+          {"site": "Public-Cloud-AZ1", "zone": "DNS-Edge", "segment": "External-DNS"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/infoblox-ext-dns-ops-guide",
+        "standards_tags": ["DNSSEC-Standard", "RFC8484-DoH"],
+        "observability_links": [
+          {"key": "portal", "value": "https://portal.infoblox.com/dns"},
+          {"key": "traffic_stats", "value": "https://infoblox-metrics.example.com"}
+        ],
+        "base_config_source_link": "https://infoblox.example.com/api-config",
+        "supported_capabilities": ["authoritative-dns", "dnssec-signing", "anycast"]
+      }
+    ]
+  },
+  {
+    "id": "comp_oracle_oci_dns",
+    "type": "Component",
+    "category_id": "category_dns",
+    "name": "Oracle OCI DNS",
+    "description": "Cloud-based authoritative DNS service within Oracle Cloud Infrastructure.",
+    "component_type": "cloud-dns",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "NA",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/OCI-DNS-005" },
+        "topology_diagram_link": "https://confluence.example.com/oci/dns-service-diagram.png",
+        "deployment_locations": [
+          {"site": "OCI-Region-UK", "zone": "Global-Edge", "segment": "Public-Cloud-DNS"}
+        ],
+        "operational_guidelines_link": "https://docs.oracle.com/en-us/cloud/dns-service-ops",
+        "standards_tags": ["Cloud-Native"],
+        "observability_links": [
+          {"key": "oci_monitoring", "value": "https://cloud.oracle.com/monitoring/dns"},
+          {"key": "audit_logs", "value": "https://cloud.oracle.com/logs/audit"}
+        ],
+        "base_config_source_link": "https://github.com/cloud-configs/oci-dns/main.tf",
+        "supported_capabilities": ["authoritative-dns", "traffic-management", "health-checks", "anycast"]
+      }
+    ]
+  },
+  {
+    "id": "comp_akamai_dns_shield",
+    "type": "Component",
+    "category_id": "category_dns",
+    "name": "Akamai DNS Shield",
+    "description": "Cloud-based DDoS protection and acceleration for DNS infrastructure.",
+    "component_type": "dns-security",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "NA",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/AKAMAI-DNS-006" },
+        "topology_diagram_link": "https://confluence.example.com/akamai/dns-shield-diagram.png",
+        "deployment_locations": [
+          {"site": "Akamai-Edge", "zone": "Global-PoP", "segment": "DDoS-Protection"}
+        ],
+        "operational_guidelines_link": "https://docs.akamai.com/dns-shield-ops",
+        "standards_tags": ["Cybersecurity-Standard"],
+        "observability_links": [
+          {"key": "portal_analytics", "value": "https://control.akamai.com/dns-shield-analytics"},
+          {"key": "event_logs", "value": "https://splunk.example.com/logs?query=akamai-dns-shield"}
+        ],
+        "base_config_source_link": "https://akamai.example.com/api/dns-shield-config",
+        "supported_capabilities": ["dns-ddos-protection", "dns-acceleration", "anycast-dns"]
+      }
+    ]
+  },
+  {
+    "id": "category_campus_rs",
+    "type": "Category",
+    "category_version": "1.0.0",
+    "name": "Campus Routing & Switching",
+    "status": "isApproved",
+    "governance_record_link": "https://jira.example.com/tickets/CAMPUS-RS-GOV-001",
+    "topology_view_link": "https://confluence.example.com/network/campus-rs-topology.png",
+    "rationale": "Manages core campus network connectivity, including wired and wireless access.",
+    "guidelines_library_tags": ["campus-network-design", "vlan-management-policy"],
+    "controls_alignments_library_tags": ["network-access-control", "physical-security-standards"],
+    "standards_library_tags": ["IEEE802.1Q", "IEEE802.1X"],
+    "roadmap_link": "https://confluence.example.com/network/campus-rs-roadmap",
+    "fsa_link": "https://intranet.example.com/fsa/campus-rs-assessment.pdf",
+    "fsa_library_tags": ["network-infrastructure-risk"],
+    "observability_kvp": [
+      {"key": "netflow_data", "value": "https://netflow-analyzer.example.com"},
+      {"key": "port_status", "value": "https://nms.example.com/campus-ports"}
+    ],
+    "contacts_kvp": [
+      {"key": "team", "value": "Campus Network Operations"},
+      {"key": "phone", "value": "+44 9876 543210"}
+    ]
+  },
+  {
+    "id": "comp_cisco_campus_switch",
+    "type": "Component",
+    "category_id": "category_campus_rs",
+    "name": "Cisco Catalyst Campus Switches",
+    "description": "Layer 2/3 switching and routing for campus access and distribution layers.",
+    "component_type": "network-device",
+    "component_label": "strategic",
+    "component_versions": [
+      {
+        "version": "IOS-XE 17.6",
+        "lifecycle_status": "active",
+        "governance": { "status": "approved", "approval_link": "https://jira.example.com/CISCO-CAT-001" },
+        "topology_diagram_link": "https://confluence.example.com/cisco/catalyst-campus-deployment.png",
+        "deployment_locations": [
+          {"site": "Main-Campus-Building-A", "zone": "Access-Layer", "segment": "User-VLANs"}
+        ],
+        "operational_guidelines_link": "https://docs.example.com/cisco-catalyst-ops-guide",
+        "standards_tags": ["IEEE802.1X", "STP-Standard"],
+        "observability_links": [
+          {"key": "dna_center", "value": "https://dnacenter.example.com/campus-analytics"},
+          {"key": "syslog", "value": "https://splunk.example.com/logs?query=cisco-catalyst"}
+        ],
+        "base_config_source_link": "https://github.com/network-configs/cisco-catalyst/base_v17.6.conf",
+        "supported_capabilities": ["vlan-tagging", "port-security", "routing-ospf", "poe"]
+      }
+    ]
+  },
+  {
+    "id": "custopt_dns_internal_fqdn_dhcp",
+    "type": "CustomerOptionSet",
+    "category_id": "category_dns",
+    "customer_name": "Internal DNS/DHCP Request",
+    "customer_option_version": "1.0.0",
+    "lifecycle_status": "active",
+    "governance": { "status": "approved", "approval_link": "https://jira.example.com/DNS-OPT-INT-001" },
+    "guidance_rationale": "Option for internal teams to request new DNS records (A, CNAME, PTR) or DHCP assignments.",
+    "capabilities_required": ["dns-internal-resolution", "dhcp-management"],
+    "options": [
+      {
+        "option_name": "New DNS Record / FQDN Request",
+        "config_block_pseudocode": "RESOURCE_TYPE: 'DNS_RECORD', RECORD_TYPE: 'A', FQDN: 'newapp.internal.example.com', IP_ADDRESS: '10.0.0.10', TTL: 3600"
       },
       {
-        "option_name": "Mandatory SSL Interception",
-        "config_block_pseudocode": "componentId: 'comp_proxy_gw', configKey: 'forceSSLInterception', value: 'true', applyTo: 'all-traffic'"
+        "option_name": "DHCP Reservation Request",
+        "config_block_pseudocode": "RESOURCE_TYPE: 'DHCP_RESERVATION', MAC_ADDRESS: '00:1A:2B:3C:4D:5E', IP_ADDRESS: '10.10.10.100', HOSTNAME: 'device-id-123', VLAN_ID: '123'"
+      }
+    ]
+  },
+  {
+    "id": "custopt_dns_external_fqdn",
+    "type": "CustomerOptionSet",
+    "category_id": "category_dns",
+    "customer_name": "External DNS/FQDN Request",
+    "customer_option_version": "1.0.0",
+    "lifecycle_status": "active",
+    "governance": { "status": "approved", "approval_link": "https://jira.example.com/DNS-OPT-EXT-002" },
+    "guidance_rationale": "Option for teams to request new public DNS records (A, CNAME, MX) for external-facing services.",
+    "capabilities_required": ["authoritative-dns"],
+    "options": [
+      {
+        "option_name": "New Public FQDN / DNS Record",
+        "config_block_pseudocode": "RESOURCE_TYPE: 'EXTERNAL_DNS_RECORD', RECORD_TYPE: 'A', FQDN: 'api.public.example.com', IP_ADDRESS: '203.0.113.45', TTL: 300, PROVIDER_TAGS: ['Infoblox', 'Akamai DNS Shield']"
+      }
+    ]
+  },
+  {
+    "id": "custopt_campus_port_vlan_update",
+    "type": "CustomerOptionSet",
+    "category_id": "category_campus_rs",
+    "customer_name": "Campus Port/VLAN Update Request",
+    "customer_option_version": "1.0.0",
+    "lifecycle_status": "active",
+    "governance": { "status": "approved", "approval_link": "https://jira.example.com/CAMPUS-OPT-001" },
+    "guidance_rationale": "Provides options for modifying switch port configurations or updating VLAN assignments for devices.",
+    "capabilities_required": ["vlan-tagging", "port-security"],
+    "options": [
+      {
+        "option_name": "Switch Port VLAN Assignment",
+        "config_block_pseudocode": "NETWORK_DEVICE_ID: 'cisco-switch-123', INTERFACE: 'GigabitEthernet1/0/5', ACTION: 'SET_VLAN', VLAN_ID: '100', PORT_STATUS: 'UP'"
+      },
+      {
+        "option_name": "Port Security Enablement",
+        "config_block_pseudocode": "NETWORK_DEVICE_ID: 'cisco-switch-456', INTERFACE: 'GigabitEthernet1/0/10', ACTION: 'ENABLE_PORT_SECURITY', MAX_MAC_ADDRESSES: 1, VIOLATION_ACTION: 'SHUTDOWN'"
       }
     ]
   }
