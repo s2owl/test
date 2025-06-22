@@ -13,16 +13,19 @@
     "standards_library_tags": ["RFC7540-HTTP2", "TLS1.3-Standard"],
     "roadmap_link": "https://confluence.example.com/network/nlb-roadmap",
     "fsa_link": "https://intranet.example.com/fsa/nlb-assessment.pdf",
-    "fsa_library_tags": ["risk-assessment-methodology-v2"],
+    "fsa_library_tags": ["security-risk-assessment-v3"],
     "observability_kvp": [
       {"key": "dashboard", "value": "https://grafana.example.com/d/nlb-overview"},
       {"key": "logs", "value": "https://kibana.example.com/logs?query=loadbalancer"},
       {"key": "alerts", "value": "https://pagerduty.example.com/service/nlb-alerts"}
     ],
     "contacts_kvp": [
-      {"key": "team", "value": "Network Core Engineering"},
-      {"key": "slack", "value": "#network-lb-support"}
-    ]
+      {"key": "Architect", "value": "network.architect@example.com"},
+      {"key": "Head of Domain", "value": "domain.head@example.com"},
+      {"key": "Platform Lead", "value": "platform.lead@example.com"},
+      {"key": "Product Owner", "value": "po.network@example.com"}
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "comp_f5_ltm",
@@ -32,10 +35,15 @@
     "description": "Traditional hardware-based Load Traffic Manager for advanced traffic management.",
     "component_type": "hardware-appliance",
     "component_label": "strategic",
+    "arr_flags": [
+        {"link": "https://arr.example.com/f5-ltm-arr-compliance"}
+    ],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "15.1.0",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/F5-LTM-001" },
         "topology_diagram_link": "https://confluence.example.com/f5/ltm-v15-deployment.png",
         "deployment_locations": [
@@ -61,10 +69,15 @@
     "description": "Software-defined application delivery controller, integrated with cloud platforms.",
     "component_type": "software-defined",
     "component_label": "strategic",
+    "arr_flags": [],
+    "risk_flags": [
+        {"link": "https://risk.example.com/avi-vulnerability-2025-Q2"}
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "20.1.5",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/AVI-LB-002" },
         "topology_diagram_link": "https://confluence.example.com/avi/deployment-v20.png",
         "deployment_locations": [
@@ -88,11 +101,14 @@
     "name": "NGINX Load Balancer",
     "description": "Lightweight and high-performance software web server and reverse proxy, used for basic load balancing.",
     "component_type": "software-proxy",
-    "component_label": "niche",
+    "component_label": "Niche",
+    "arr_flags": [],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "1.20.0",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Niche",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/NGINX-LB-003" },
         "topology_diagram_link": "https://confluence.example.com/nginx/basic-lb-diagram.png",
         "deployment_locations": [
@@ -124,7 +140,8 @@
         "option_name": "Ordered List Server Priority",
         "config_block_pseudocode": "COMPONENT_TAG: 'load_balancer', PROTOCOL: 'HTTP', TRAFFIC_STRATEGY: 'ORDERED_LIST', SERVERS: ['serverA_IP', 'serverB_IP', 'serverC_IP'], FALLBACK_ACTION: 'FAIL_CLOSED'"
       }
-    ]
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "custopt_round_robin",
@@ -141,7 +158,8 @@
         "option_name": "Round Robin Distribution",
         "config_block_pseudocode": "COMPONENT_TAG: 'load_balancer', PROTOCOL: 'HTTP', TRAFFIC_STRATEGY: 'ROUND_ROBIN', SERVER_POOL: 'web_servers_pool_1'"
       }
-    ]
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "custopt_least_used",
@@ -158,7 +176,8 @@
         "option_name": "Least Used Server Selection",
         "config_block_pseudocode": "COMPONENT_TAG: 'load_balancer', PROTOCOL: 'TCP', TRAFFIC_STRATEGY: 'LEAST_USED_CONNECTIONS', SERVER_POOL: 'db_servers_pool_2'"
       }
-    ]
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "custopt_weighted_round_robin",
@@ -175,7 +194,8 @@
         "option_name": "Weighted Round Robin Traffic Distribution",
         "config_block_pseudocode": "COMPONENT_TAG: 'load_balancer', PROTOCOL: 'HTTPS', TRAFFIC_STRATEGY: 'WEIGHTED_ROUND_ROBIN', SERVER_WEIGHTS: [{'serverA_IP': 3}, {'serverB_IP': 1}]"
       }
-    ]
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "category_forward_proxies",
@@ -197,9 +217,12 @@
       {"key": "audit_logs", "value": "https://splunk.example.com/logs?query=proxy-audit"}
     ],
     "contacts_kvp": [
-      {"key": "team", "value": "Security Engineering"},
-      {"key": "email", "value": "security-proxy@example.com"}
-    ]
+      {"key": "Architect", "value": "security.architect@example.com"},
+      {"key": "Head of Domain", "value": "ciso.office@example.com"},
+      {"key": "Platform Lead", "value": "proxy.platform@example.com"},
+      {"key": "Product Owner", "value": "proxy.product@example.com"}
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "comp_bluecoat_proxy",
@@ -208,11 +231,17 @@
     "name": "Bluecoat ProxySG",
     "description": "Enterprise-grade hardware proxy for on-premise deployments, covering various user groups.",
     "component_type": "hardware-proxy",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [
+        {"link": "https://arr.example.com/bluecoat-staff-arr"},
+        {"link": "https://arr.example.com/bluecoat-server-arr"}
+    ],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "6.7.5",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/BC-PROXY-001" },
         "topology_diagram_link": "https://confluence.example.com/bluecoat/proxysg-deployment.png",
         "deployment_locations": [
@@ -237,11 +266,16 @@
     "name": "ZScaler Internet Access (ZIA)",
     "description": "Cloud-native security platform for secure web gateways, covering remote users and SaaS applications.",
     "component_type": "cloud-proxy",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [],
+    "risk_flags": [
+        {"link": "https://risk.example.com/zscaler-m365-risk"}
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "NA",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/ZS-ZIA-002" },
         "topology_diagram_link": "https://confluence.example.com/zscaler/zia-deployment.png",
         "deployment_locations": [
@@ -278,9 +312,12 @@
       {"key": "query_logs", "value": "https://kibana.example.com/logs?query=dns-queries"}
     ],
     "contacts_kvp": [
-      {"key": "team", "value": "Network Core Services"},
-      {"key": "phone", "value": "+44 1234 567890"}
-    ]
+      {"key": "Architect", "value": "dns.architect@example.com"},
+      {"key": "Head of Domain", "value": "dns.domain.head@example.com"},
+      {"key": "Platform Lead", "value": "dns.platform.lead@example.com"},
+      {"key": "Product Owner", "value": "dns.product@example.com"}
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "comp_qip_dns",
@@ -289,11 +326,14 @@
     "name": "QIP Internal DNS/DHCP",
     "description": "On-premise IP Address Management (IPAM), DNS, and DHCP solution for internal networks.",
     "component_type": "ipam-solution",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "9.0.0",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/QIP-DNS-001" },
         "topology_diagram_link": "https://confluence.example.com/qip/internal-dns-dhcp.png",
         "deployment_locations": [
@@ -317,11 +357,14 @@
     "name": "Efficient IP Internal DNS/DHCP",
     "description": "Integrated DDI (DNS, DHCP, IPAM) solution for highly available internal network services.",
     "component_type": "ddi-solution",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "8.0.0",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/EIP-DNS-002" },
         "topology_diagram_link": "https://confluence.example.com/efficientip/ddi-internal.png",
         "deployment_locations": [
@@ -345,11 +388,14 @@
     "name": "F5 GTM (Global Traffic Manager)",
     "description": "Provides global server load balancing (GSLB) and intelligent DNS resolution for disaster recovery and performance.",
     "component_type": "gslb-solution",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "16.0.0",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/F5-GTM-003" },
         "topology_diagram_link": "https://confluence.example.com/f5/gtm-gslb-diagram.png",
         "deployment_locations": [
@@ -372,11 +418,14 @@
     "name": "Infoblox External DNS",
     "description": "External authoritative DNS services for public-facing domains.",
     "component_type": "external-dns-provider",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "8.4.0",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/IB-EXT-DNS-004" },
         "topology_diagram_link": "https://confluence.example.com/infoblox/external-dns-deployment.png",
         "deployment_locations": [
@@ -400,11 +449,14 @@
     "name": "Oracle OCI DNS",
     "description": "Cloud-based authoritative DNS service within Oracle Cloud Infrastructure.",
     "component_type": "cloud-dns",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "NA",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/OCI-DNS-005" },
         "topology_diagram_link": "https://confluence.example.com/oci/dns-service-diagram.png",
         "deployment_locations": [
@@ -428,11 +480,14 @@
     "name": "Akamai DNS Shield",
     "description": "Cloud-based DDoS protection and acceleration for DNS infrastructure.",
     "component_type": "dns-security",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "NA",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/AKAMAI-DNS-006" },
         "topology_diagram_link": "https://confluence.example.com/akamai/dns-shield-diagram.png",
         "deployment_locations": [
@@ -469,9 +524,12 @@
       {"key": "port_status", "value": "https://nms.example.com/campus-ports"}
     ],
     "contacts_kvp": [
-      {"key": "team", "value": "Campus Network Operations"},
-      {"key": "phone", "value": "+44 9876 543210"}
-    ]
+      {"key": "Architect", "value": "campus.architect@example.com"},
+      {"key": "Head of Domain", "value": "campus.domain.head@example.com"},
+      {"key": "Platform Lead", "value": "campus.platform.lead@example.com"},
+      {"key": "Product Owner", "value": "campus.product@example.com"}
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "comp_cisco_campus_switch",
@@ -480,11 +538,14 @@
     "name": "Cisco Catalyst Campus Switches",
     "description": "Layer 2/3 switching and routing for campus access and distribution layers.",
     "component_type": "network-device",
-    "component_label": "strategic",
+    "component_label": "Strategic",
+    "arr_flags": [],
+    "risk_flags": [],
+    "last_updated": "2025-06-22T14:30:00.000Z",
     "component_versions": [
       {
         "version": "IOS-XE 17.6",
-        "lifecycle_status": "active",
+        "lifecycle_status": "Strategic",
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/CISCO-CAT-001" },
         "topology_diagram_link": "https://confluence.example.com/cisco/catalyst-campus-deployment.png",
         "deployment_locations": [
@@ -520,7 +581,8 @@
         "option_name": "DHCP Reservation Request",
         "config_block_pseudocode": "RESOURCE_TYPE: 'DHCP_RESERVATION', MAC_ADDRESS: '00:1A:2B:3C:4D:5E', IP_ADDRESS: '10.10.10.100', HOSTNAME: 'device-id-123', VLAN_ID: '123'"
       }
-    ]
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "custopt_dns_external_fqdn",
@@ -537,7 +599,8 @@
         "option_name": "New Public FQDN / DNS Record",
         "config_block_pseudocode": "RESOURCE_TYPE: 'EXTERNAL_DNS_RECORD', RECORD_TYPE: 'A', FQDN: 'api.public.example.com', IP_ADDRESS: '203.0.113.45', TTL: 300, PROVIDER_TAGS: ['Infoblox', 'Akamai DNS Shield']"
       }
-    ]
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   },
   {
     "id": "custopt_campus_port_vlan_update",
@@ -558,6 +621,7 @@
         "option_name": "Port Security Enablement",
         "config_block_pseudocode": "NETWORK_DEVICE_ID: 'cisco-switch-456', INTERFACE: 'GigabitEthernet1/0/10', ACTION: 'ENABLE_PORT_SECURITY', MAX_MAC_ADDRESSES: 1, VIOLATION_ACTION: 'SHUTDOWN'"
       }
-    ]
+    ],
+    "last_updated": "2025-06-22T14:30:00.000Z"
   }
 ]
