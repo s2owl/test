@@ -7,8 +7,8 @@ const multer = require('multer');
 // --- Configuration ---
 // Port: Uses process.env.PORT (for Heroku/PaaS), then APP_PORT, then falls back to 8082
 const port = parseInt(process.env.PORT || process.env['APP_PORT'] || '8082');
-// App Name: Used as a URL prefix, e.g., /myapp/
-const appName = process.env['APP_NAME'] || 'myapp';
+// App Name: Used as a URL prefix, e.g., /design/
+const appName = process.env['APP_NAME'] || 'design'; // Changed default to 'design' based on your URL
 
 const app = express();
 
@@ -80,6 +80,20 @@ const parseStringToArray = (str) => {
     return str ? str.split(',').map(s => s.trim()).filter(s => s !== '') : [];
 };
 
+// Parses dynamic form fields for KVP (key-value pairs)
+const parseKVP = (body, prefix = '') => {
+    const items = [];
+    let i = 0;
+    while (body[`${prefix}key_${i}`] || body[`${prefix}value_${i}`]) {
+        items.push({
+            key: body[`${prefix}key_${i}`] || '',
+            value: body[`${prefix}value_${i}`] || ''
+        });
+        i++;
+    }
+    return items;
+};
+
 // Parses dynamic form fields for deployment locations (e.g., deployment_site_0, deployment_zone_0)
 const parseDeploymentLocations = (body, prefix = 'deployment_') => {
     const locations = [];
@@ -93,20 +107,6 @@ const parseDeploymentLocations = (body, prefix = 'deployment_') => {
         i++;
     }
     return locations;
-};
-
-// Parses dynamic form fields for observability links (e.g., obs_key_0, obs_value_0)
-const parseObservabilityLinks = (body, prefix = 'obs_') => {
-    const links = [];
-    let i = 0;
-    while (body[`${prefix}key_${i}`] || body[`${prefix}value_${i}`]) {
-        links.push({
-            key: body[`${prefix}key_${i}`] || '',
-            value: body[`${prefix}value_${i}`] || ''
-        });
-        i++;
-    }
-    return links;
 };
 
 // Parses dynamic form fields for customer options (e.g., option_name_0, config_pseudocode_0)
@@ -125,85 +125,118 @@ const parseCustomerOptions = (body, prefix = 'option_') => {
 
 
 // --- Query/Search Logic: Filters the loaded data based on query parameters ---
+// Refactored to search across all top-level types and their nested structures
 const filterData = (query) => {
-    let allData = readData(); // Load all data from the JSON file
-    let results = []; // Array to store filtered results
+    let allData = readData();
+    let results = [];
 
-    // Separate Parents and CustomerOptionSets for individual filtering
-    const parents = allData.filter(item => item.components !== undefined);
-    const customerOptionSets = allData.filter(item => item.type === "CustomerOptionSet");
+    // Combine all potential top-level items into a single flat structure for easier iteration
+    // This deep-clones to avoid modifying the original data during filtering
+    const allEntities = JSON.parse(JSON.stringify(allData));
 
-    // --- Filter Parents and their nested Components/Versions ---
-    parents.forEach(parent => {
-        let parentMatch = false; // Flag if the parent itself matches (even if no components/versions do)
-        const parentResults = { ...parent, components: [] }; // Clone parent to hold filtered components
+    allEntities.forEach(entity => {
+        let entityMatch = false;
 
-        // Apply parent-level filters (e.g., parentName, parentLabel)
-        if (query.parentName && parent.name.toLowerCase().includes(query.parentName.toLowerCase())) {
-            parentMatch = true;
-        }
-        if (query.parentLabel && parent.parent_label.toLowerCase() === query.parentLabel.toLowerCase()) {
-            parentMatch = true;
-        }
-
-        parent.components.forEach(component => {
-            let componentMatch = false; // Flag if the component itself matches
-            const componentResults = { ...component, component_versions: [] }; // Clone component to hold filtered versions
-
-            // Apply component-level filters (e.g., componentName, componentType, componentLabel)
-            if (query.componentName && component.name.toLowerCase().includes(query.componentName.toLowerCase())) {
-                componentMatch = true;
+        // --- Filter Categories ---
+        if (entity.type === "Category") {
+            // Apply category-level filters
+            if (query.categoryName && entity.name.toLowerCase().includes(query.categoryName.toLowerCase())) {
+                entityMatch = true;
             }
-            if (query.componentType && component.component_type.toLowerCase() === query.componentType.toLowerCase()) {
-                componentMatch = true;
+            if (query.categoryStatus && entity.status.toLowerCase() === query.categoryStatus.toLowerCase()) {
+                entityMatch = true;
             }
-            if (query.componentLabel && component.component_label.toLowerCase() === query.componentLabel.toLowerCase()) {
-                componentMatch = true;
+            // General text search for Category (name, rationale, links, KVP values)
+            const categorySearchableText = `${entity.name || ''} ${entity.rationale || ''} ${entity.status || ''} ` +
+                                          `${entity.governance_record_link || ''} ${entity.topology_view_link || ''} ` +
+                                          `${entity.roadmap_link || ''} ${entity.fsa_link || ''} ` +
+                                          (entity.guidelines_library_tags ? entity.guidelines_library_tags.join(' ') : '') + ' ' +
+                                          (entity.controls_alignments_library_tags ? entity.controls_alignments_library_tags.join(' ') : '') + ' ' +
+                                          (entity.standards_library_tags ? entity.standards_library_tags.join(' ') : '') + ' ' +
+                                          (entity.fsa_library_tags ? entity.fsa_library_tags.join(' ') : '') + ' ' +
+                                          (entity.observability_kvp ? entity.observability_kvp.map(k => k.key + ' ' + k.value).join(' ') : '') + ' ' +
+                                          (entity.contacts_kvp ? entity.contacts_kvp.map(k => k.key + ' ' + k.value).join(' ') : '');
+
+            if (query.keyword && categorySearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
+                entityMatch = true;
+            }
+             if (query.searchText && categorySearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
+                entityMatch = true;
             }
 
-            component.component_versions.forEach(version => {
-                let versionMatch = false; // Flag if the version itself matches
 
-                // Apply version-level filters
-                if (query.version && version.version.toLowerCase().includes(query.version.toLowerCase())) {
-                    versionMatch = true;
+            // Filter its associated Components and Customer Options (if no specific component/customer option queries are made, include all)
+            const originalComponents = allEntities.filter(item => item.type === "Component" && item.category_id === entity.id);
+            const originalCustomerOptions = allEntities.filter(item => item.type === "CustomerOptionSet" && item.category_id === entity.id);
+
+            // Temporarily store filtered children to avoid direct modification of original structure
+            const filteredComponents = [];
+            const filteredCustomerOptions = [];
+
+            // --- Filter Components associated with this Category ---
+            originalComponents.forEach(component => {
+                let componentMatch = false;
+                const componentFilteredVersions = [];
+
+                // Apply component-level filters
+                if (query.componentName && component.name.toLowerCase().includes(query.componentName.toLowerCase())) {
+                    componentMatch = true;
                 }
-                if (query.lifecycleStatus && version.lifecycle_status.toLowerCase() === query.lifecycleStatus.toLowerCase()) {
-                    versionMatch = true;
+                if (query.componentType && component.component_type.toLowerCase() === query.componentType.toLowerCase()) {
+                    componentMatch = true;
                 }
-                if (query.governanceStatus && version.governance && version.governance.status.toLowerCase() === query.governanceStatus.toLowerCase()) {
-                    versionMatch = true;
+                if (query.componentLabel && component.component_label.toLowerCase() === query.componentLabel.toLowerCase()) {
+                    componentMatch = true;
                 }
 
-                // General text search across relevant fields (names, descriptions, links, statuses)
-                const searchableText = `${parent.name || ''} ${parent.description || ''} ${parent.parent_label || ''} ` +
-                                       `${component.name || ''} ${component.description || ''} ${component.component_type || ''} ${component.component_label || ''} ` +
-                                       `${version.version || ''} ${version.lifecycle_status || ''} ${version.governance?.status || ''} ` +
-                                       `${version.topology_diagram_link || ''} ${version.operational_guidelines_link || ''} ${version.base_config_source_link || ''}`;
-
-                if (query.searchText && searchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
-                    versionMatch = true;
+                // General text search for Component (name, description, label)
+                const componentSearchableText = `${component.name || ''} ${component.description || ''} ${component.component_type || ''} ${component.component_label || ''}`;
+                 if (query.keyword && componentSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
+                    componentMatch = true;
+                }
+                 if (query.searchText && componentSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
+                    componentMatch = true;
                 }
 
-                // Filter by standards_tags (checks if any tag includes the search term)
-                if (query.standardsTag) {
-                    const searchTag = query.standardsTag.toLowerCase();
-                    if (version.standards_tags && version.standards_tags.some(tag => tag.toLowerCase().includes(searchTag))) {
+                // Filter its component_versions
+                component.component_versions.forEach(version => {
+                    let versionMatch = false;
+
+                    // Apply version-level filters
+                    if (query.version && version.version.toLowerCase().includes(query.version.toLowerCase())) {
                         versionMatch = true;
                     }
-                }
-
-                // Filter by supported_capabilities (checks if any capability includes the search term)
-                if (query.capability) {
-                    const searchCapability = query.capability.toLowerCase();
-                    if (version.supported_capabilities && version.supported_capabilities.some(cap => cap.toLowerCase().includes(searchCapability))) {
+                    if (query.lifecycleStatus && version.lifecycle_status.toLowerCase() === query.lifecycleStatus.toLowerCase()) {
                         versionMatch = true;
                     }
-                }
+                    if (query.governanceStatus && version.governance && version.governance.status.toLowerCase() === query.governanceStatus.toLowerCase()) {
+                        versionMatch = true;
+                    }
 
-                // Filter by deployment_locations (checks if any location matches site/zone/segment)
-                if (query.site || query.zone || query.segment) {
-                    if (version.deployment_locations && version.deployment_locations.some(loc => {
+                    // Version-specific text search
+                    const versionSearchableText = `${version.version || ''} ${version.lifecycle_status || ''} ${version.governance?.status || ''} ` +
+                                                  `${version.topology_diagram_link || ''} ${version.operational_guidelines_link || ''} ${version.base_config_source_link || ''} ` +
+                                                  (version.standards_tags ? version.standards_tags.join(' ') : '') + ' ' +
+                                                  (version.supported_capabilities ? version.supported_capabilities.join(' ') : '') + ' ' +
+                                                  (version.deployment_locations ? version.deployment_locations.map(loc => loc.site + ' ' + loc.zone + ' ' + loc.segment).join(' ') : '') + ' ' +
+                                                  (version.observability_links ? version.observability_links.map(link => link.key + ' ' + link.value).join(' ') : '');
+
+                    if (query.keyword && versionSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
+                        versionMatch = true;
+                    }
+                    if (query.searchText && versionSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
+                        versionMatch = true;
+                    }
+
+
+                    // Filter by specific tags/capabilities/locations/observability
+                    if (query.standardsTag && version.standards_tags && version.standards_tags.some(tag => tag.toLowerCase().includes(query.standardsTag.toLowerCase()))) {
+                        versionMatch = true;
+                    }
+                    if (query.capability && version.supported_capabilities && version.supported_capabilities.some(cap => cap.toLowerCase().includes(query.capability.toLowerCase()))) {
+                        versionMatch = true;
+                    }
+                    if ((query.site || query.zone || query.segment) && version.deployment_locations && version.deployment_locations.some(loc => {
                         const siteMatch = query.site ? loc.site.toLowerCase().includes(query.site.toLowerCase()) : true;
                         const zoneMatch = query.zone ? loc.zone.toLowerCase().includes(query.zone.toLowerCase()) : true;
                         const segmentMatch = query.segment ? loc.segment.toLowerCase().includes(query.segment.toLowerCase()) : true;
@@ -211,96 +244,200 @@ const filterData = (query) => {
                     })) {
                         versionMatch = true;
                     }
-                }
-
-                // Filter by observability_links (checks if any link key or value includes the search term)
-                if (query.obsKey || query.obsValue) {
-                    if (version.observability_links && version.observability_links.some(link => {
+                    if ((query.obsKey || query.obsValue) && version.observability_links && version.observability_links.some(link => {
                         const keyMatch = query.obsKey ? link.key.toLowerCase().includes(query.obsKey.toLowerCase()) : true;
                         const valueMatch = query.obsValue ? link.value.toLowerCase().includes(query.obsValue.toLowerCase()) : true;
                         return keyMatch && valueMatch;
                     })) {
                         versionMatch = true;
                     }
-                }
 
-                // Specific keyword search (for "proxy", "SSL interception", etc.)
-                // This searches component/version descriptions and supported capabilities
-                if (query.keyword) {
-                    const lowerKeyword = query.keyword.toLowerCase();
-                    if (component.description && component.description.toLowerCase().includes(lowerKeyword) ||
-                        version.operational_guidelines_link && version.operational_guidelines_link.toLowerCase().includes(lowerKeyword) ||
-                        version.base_config_source_link && version.base_config_source_link.toLowerCase().includes(lowerKeyword)) {
-                        versionMatch = true;
+
+                    if (versionMatch) {
+                        componentFilteredVersions.push(version);
+                        componentMatch = true; // Component matches if any of its versions match
+                        entityMatch = true;    // Category matches if any of its components/versions match
                     }
-                    if (version.supported_capabilities && version.supported_capabilities.some(cap => cap.toLowerCase().includes(lowerKeyword))) {
-                        versionMatch = true;
-                    }
-                }
+                });
 
-
-                // If this version matches, add it to the results for this component
-                if (versionMatch) {
-                    componentResults.component_versions.push(version);
-                    componentMatch = true; // If any version matches, the component itself effectively matches
-                    parentMatch = true;    // If any component matches, the parent itself effectively matches
+                // If component (or any of its versions) matches, add it to the filtered results
+                if (componentFilteredVersions.length > 0 || (componentMatch && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue'].includes(k)))) {
+                    // Create a clone with only the matched versions
+                    const clonedComponent = { ...component, component_versions: componentFilteredVersions };
+                    filteredComponents.push(clonedComponent);
+                    entityMatch = true; // Category matches if an associated component matches
                 }
             });
 
-            // If component (or any of its versions) matches, add it to the parent results
-            // The condition ensures that if no specific version-level queries were made,
-            // or if a version query was made and matched, the component is included.
-            if (componentResults.component_versions.length > 0 || (componentMatch && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue', 'keyword'].includes(k)))) {
-                parentResults.components.push(componentResults);
-            }
-        });
 
-        // Add parent to final results if it or any of its components/versions matched
-        // Similar logic: include if components matched, or if parent matched without component-specific queries
-        if (parentResults.components.length > 0 || (parentMatch && Object.keys(query).every(k => !['componentName', 'componentType', 'componentLabel', 'version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue', 'keyword'].includes(k)))) {
-             results.push(parentResults);
-        }
-    });
+            // --- Filter Customer Option Sets associated with this Category ---
+            originalCustomerOptions.forEach(optionSet => {
+                let optionSetMatch = false;
 
-    // --- Filter CustomerOptionSets ---
-    customerOptionSets.forEach(optionSet => {
-        let optionSetMatch = false;
+                // Apply customer option set filters
+                if (query.customerName && optionSet.customer_name.toLowerCase().includes(query.customerName.toLowerCase())) {
+                    optionSetMatch = true;
+                }
+                if (query.customerOptionVersion && optionSet.customer_option_version.toLowerCase().includes(query.customerOptionVersion.toLowerCase())) {
+                    optionSetMatch = true;
+                }
+                if (query.customerLifecycleStatus && optionSet.lifecycle_status.toLowerCase() === query.customerLifecycleStatus.toLowerCase()) {
+                    optionSetMatch = true;
+                }
+                if (query.customerGovernanceStatus && optionSet.governance && optionSet.governance.status.toLowerCase() === query.customerGovernanceStatus.toLowerCase()) {
+                    optionSetMatch = true;
+                }
+                if (query.customerCapabilityRequired) {
+                    const searchCap = query.customerCapabilityRequired.toLowerCase();
+                    if (optionSet.capabilities_required && optionSet.capabilities_required.some(cap => cap.toLowerCase().includes(searchCap))) {
+                        optionSetMatch = true;
+                    }
+                }
+                if (query.optionName) {
+                    const searchOptName = query.optionName.toLowerCase();
+                    if (optionSet.options && optionSet.options.some(opt => opt.option_name.toLowerCase().includes(searchOptName))) {
+                        optionSetMatch = true;
+                    }
+                }
+                if (query.pseudocodeKeyword) {
+                    const searchPseudo = query.pseudocodeKeyword.toLowerCase();
+                    if (optionSet.options && optionSet.options.some(opt => opt.config_block_pseudocode && opt.config_block_pseudocode.toLowerCase().includes(searchPseudo))) {
+                        optionSetMatch = true;
+                    }
+                }
+                 // General text search for Customer Option Set
+                const optionSetSearchableText = `${optionSet.customer_name || ''} ${optionSet.guidance_rationale || ''} ` +
+                                                (optionSet.capabilities_required ? optionSet.capabilities_required.join(' ') : '') + ' ' +
+                                                (optionSet.options ? optionSet.options.map(o => o.option_name + ' ' + o.config_block_pseudocode).join(' ') : '');
+                if (query.keyword && optionSetSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
+                    optionSetMatch = true;
+                }
+                if (query.searchText && optionSetSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
+                    optionSetMatch = true;
+                }
 
-        if (query.customerName && optionSet.customer_name.toLowerCase().includes(query.customerName.toLowerCase())) {
-            optionSetMatch = true;
-        }
-        if (query.customerOptionVersion && optionSet.customer_option_version.toLowerCase().includes(query.customerOptionVersion.toLowerCase())) {
-            optionSetMatch = true;
-        }
-        if (query.customerLifecycleStatus && optionSet.lifecycle_status.toLowerCase() === query.customerLifecycleStatus.toLowerCase()) {
-            optionSetMatch = true;
-        }
-        if (query.customerGovernanceStatus && optionSet.governance && optionSet.governance.status.toLowerCase() === query.customerGovernanceStatus.toLowerCase()) {
-            optionSetMatch = true;
-        }
-        if (query.customerCapabilityRequired) {
-            const searchCap = query.customerCapabilityRequired.toLowerCase();
-            if (optionSet.capabilities_required && optionSet.capabilities_required.some(cap => cap.toLowerCase().includes(searchCap))) {
-                optionSetMatch = true;
+
+                if (optionSetMatch) {
+                    filteredCustomerOptions.push(optionSet); // Add the entire matching option set
+                    entityMatch = true; // Category matches if an associated customer option set matches
+                }
+            });
+
+
+            // Add Category to final results if it or any of its associated components/customer options matched
+            // If only category-level query params are present, just match the category itself.
+            const hasComponentOrCustomerOptionQueries = Object.keys(query).some(k =>
+                ['componentName', 'componentType', 'componentLabel', 'version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue', 'keyword', 'customerName', 'customerOptionVersion', 'customerLifecycleStatus', 'customerGovernanceStatus', 'customerCapabilityRequired', 'optionName', 'pseudocodeKeyword'].includes(k)
+            );
+
+            if (entityMatch) {
+                // If the entity itself or its children matched, and no specific child queries were made
+                // or the children matched the specific queries, add the category with its filtered children.
+                const clonedCategory = {
+                    ...entity,
+                    components: filteredComponents,
+                    customer_options: filteredCustomerOptions
+                };
+                results.push(clonedCategory);
             }
         }
-        if (query.optionName) {
-            const searchOptName = query.optionName.toLowerCase();
-            if (optionSet.options && optionSet.options.some(opt => opt.option_name.toLowerCase().includes(searchOptName))) {
-                optionSetMatch = true;
-            }
-        }
-        // Search pseudo-code block for keywords
-        if (query.pseudocodeKeyword) {
-            const searchPseudo = query.pseudocodeKeyword.toLowerCase();
-            if (optionSet.options && optionSet.options.some(opt => opt.config_block_pseudocode && opt.config_block_pseudocode.toLowerCase().includes(searchPseudo))) {
-                optionSetMatch = true;
-            }
-        }
+        // --- End Filter Categories ---
 
-        if (optionSetMatch) {
-            results.push(optionSet);
+        // --- Filter Components (if categoryId is explicitly queried OR no categoryName/Status query) ---
+        // This handles cases where user searches directly for a component not necessarily linked via category query
+        if (entity.type === "Component" && !query.categoryName && !query.categoryStatus) {
+            let componentMatchDirect = false;
+            const componentFilteredVersions = [];
+
+             // Apply component-level filters (similar to above but for direct match)
+            if (query.componentName && entity.name.toLowerCase().includes(query.componentName.toLowerCase())) {
+                componentMatchDirect = true;
+            }
+            if (query.componentType && entity.component_type.toLowerCase() === query.componentType.toLowerCase()) {
+                componentMatchDirect = true;
+            }
+            if (query.componentLabel && entity.component_label.toLowerCase() === query.componentLabel.toLowerCase()) {
+                componentMatchDirect = true;
+            }
+            const componentSearchableText = `${entity.name || ''} ${entity.description || ''} ${entity.component_type || ''} ${entity.component_label || ''}`;
+            if (query.keyword && componentSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
+                componentMatchDirect = true;
+            }
+            if (query.searchText && componentSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) {
+                componentMatchDirect = true;
+            }
+
+            entity.component_versions.forEach(version => {
+                let versionMatch = false;
+                if (query.version && version.version.toLowerCase().includes(query.version.toLowerCase())) { versionMatch = true; }
+                if (query.lifecycleStatus && version.lifecycle_status.toLowerCase() === query.lifecycleStatus.toLowerCase()) { versionMatch = true; }
+                if (query.governanceStatus && version.governance && version.governance.status.toLowerCase() === query.governanceStatus.toLowerCase()) { versionMatch = true; }
+                const versionSearchableText = `${version.version || ''} ${version.lifecycle_status || ''} ${version.governance?.status || ''} ` +
+                                              `${version.topology_diagram_link || ''} ${version.operational_guidelines_link || ''} ${version.base_config_source_link || ''} ` +
+                                              (version.standards_tags ? version.standards_tags.join(' ') : '') + ' ' +
+                                              (version.supported_capabilities ? version.supported_capabilities.join(' ') : '') + ' ' +
+                                              (version.deployment_locations ? version.deployment_locations.map(loc => loc.site + ' ' + loc.zone + ' ' + loc.segment).join(' ') : '') + ' ' +
+                                              (version.observability_links ? version.observability_links.map(link => link.key + ' ' + link.value).join(' ') : '');
+                if (query.keyword && versionSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) { versionMatch = true; }
+                if (query.searchText && versionSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) { versionMatch = true; }
+                if (query.standardsTag && version.standards_tags && version.standards_tags.some(tag => tag.toLowerCase().includes(query.standardsTag.toLowerCase()))) { versionMatch = true; }
+                if (query.capability && version.supported_capabilities && version.supported_capabilities.some(cap => cap.toLowerCase().includes(query.capability.toLowerCase()))) { versionMatch = true; }
+                if ((query.site || query.zone || query.segment) && version.deployment_locations && version.deployment_locations.some(loc => {
+                    const siteMatch = query.site ? loc.site.toLowerCase().includes(query.site.toLowerCase()) : true;
+                    const zoneMatch = query.zone ? loc.zone.toLowerCase().includes(query.zone.toLowerCase()) : true;
+                    const segmentMatch = query.segment ? loc.segment.toLowerCase().includes(query.segment.toLowerCase()) : true;
+                    return siteMatch && zoneMatch && segmentMatch;
+                })) { versionMatch = true; }
+                if ((query.obsKey || query.obsValue) && version.observability_links && version.observability_links.some(link => {
+                    const keyMatch = query.obsKey ? link.key.toLowerCase().includes(query.obsKey.toLowerCase()) : true;
+                    const valueMatch = query.obsValue ? link.value.toLowerCase().includes(query.obsValue.toLowerCase()) : true;
+                    return keyMatch && valueMatch;
+                })) { versionMatch = true; }
+
+                if (versionMatch) {
+                    componentFilteredVersions.push(version);
+                    componentMatchDirect = true;
+                }
+            });
+
+            if (componentFilteredVersions.length > 0 || (componentMatchDirect && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue'].includes(k)))) {
+                const clonedComponent = { ...entity, component_versions: componentFilteredVersions };
+                results.push(clonedComponent);
+            }
         }
+        // --- End Filter Components ---
+
+        // --- Filter CustomerOptionSets (if no categoryName/Status query) ---
+        if (entity.type === "CustomerOptionSet" && !query.categoryName && !query.categoryStatus) {
+            let optionSetMatchDirect = false;
+
+            if (query.customerName && entity.customer_name.toLowerCase().includes(query.customerName.toLowerCase())) { optionSetMatchDirect = true; }
+            if (query.customerOptionVersion && entity.customer_option_version.toLowerCase().includes(query.customerOptionVersion.toLowerCase())) { optionSetMatchDirect = true; }
+            if (query.customerLifecycleStatus && entity.lifecycle_status.toLowerCase() === query.customerLifecycleStatus.toLowerCase()) { optionSetMatchDirect = true; }
+            if (query.customerGovernanceStatus && entity.governance && entity.governance.status.toLowerCase() === query.customerGovernanceStatus.toLowerCase()) { optionSetMatchDirect = true; }
+            if (query.customerCapabilityRequired) {
+                const searchCap = query.customerCapabilityRequired.toLowerCase();
+                if (entity.capabilities_required && entity.capabilities_required.some(cap => cap.toLowerCase().includes(searchCap))) { optionSetMatchDirect = true; }
+            }
+            if (query.optionName) {
+                const searchOptName = query.optionName.toLowerCase();
+                if (entity.options && entity.options.some(opt => opt.option_name.toLowerCase().includes(searchOptName))) { optionSetMatchDirect = true; }
+            }
+            if (query.pseudocodeKeyword) {
+                const searchPseudo = query.pseudocodeKeyword.toLowerCase();
+                if (entity.options && entity.options.some(opt => opt.config_block_pseudocode && opt.config_block_pseudocode.toLowerCase().includes(searchPseudo))) { optionSetMatchDirect = true; }
+            }
+            const optionSetSearchableText = `${entity.customer_name || ''} ${entity.guidance_rationale || ''} ` +
+                                            (entity.capabilities_required ? entity.capabilities_required.join(' ') : '') + ' ' +
+                                            (entity.options ? entity.options.map(o => o.option_name + ' ' + o.config_block_pseudocode).join(' ') : '');
+            if (query.keyword && optionSetSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) { optionSetMatchDirect = true; }
+            if (query.searchText && optionSetSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) { optionSetMatchDirect = true; }
+
+            if (optionSetMatchDirect) {
+                results.push(entity);
+            }
+        }
+        // --- End Filter CustomerOptionSets ---
     });
 
     return results;
@@ -309,30 +446,56 @@ const filterData = (query) => {
 
 // --- Main Routes ---
 
-// Home page: Displays list of Parents and Customer Option Sets
+// Home page: Displays list of Categories, Components, and Customer Option Sets
 app.get(`/${appName}/`, (req, res) => {
     const allData = readData();
-    const parents = allData.filter(item => item.components !== undefined);
+    const categories = allData.filter(item => item.type === "Category");
+    const components = allData.filter(item => item.type === "Component");
     const customerOptionSets = allData.filter(item => item.type === "CustomerOptionSet");
 
     res.render('index', {
-        parents: parents,
+        categories: categories,
+        components: components,
         customerOptionSets: customerOptionSets,
         message: req.query.message || null,
         appName: appName
     });
 });
 
-// Route to view a specific Parent and its Components/Versions
-app.get(`/${appName}/parent/:parentId`, (req, res) => {
+// Route to view a specific Category and its associated Components/Customer Option Sets
+app.get(`/${appName}/category/:categoryId`, (req, res) => {
     const allData = readData();
-    const parent = allData.find(p => p.id === req.params.parentId && p.components !== undefined);
+    const category = allData.find(item => item.id === req.params.categoryId && item.type === "Category");
+    const allComponents = allData.filter(item => item.type === "Component"); // Pass all components for filtering in EJS
+    const allCustomerOptionSets = allData.filter(item => item.type === "CustomerOptionSet"); // Pass all customer options for filtering in EJS
 
-    if (!parent) {
-        return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Parent not found.'));
+    if (!category) {
+        return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Category not found.'));
     }
-    res.render('parent_detail', { parent: parent, message: req.query.message || null, appName: appName });
+    // Render the category_detail.ejs template
+    res.render('category_detail', {
+        category: category,
+        allComponents: allComponents, // Pass all components to EJS to allow filtering by category_id
+        allCustomerOptionSets: allCustomerOptionSets, // Pass all customer options to EJS
+        message: req.query.message || null,
+        appName: appName
+    });
 });
+
+// Route to view a specific Component (placeholder for future dedicated page)
+app.get(`/${appName}/component/:componentId`, (req, res) => {
+    const allData = readData();
+    const component = allData.find(item => item.id === req.params.componentId && item.type === "Component");
+    if (!component) {
+        return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Component not found.'));
+    }
+    // Placeholder: In a full app, you'd render a component_detail.ejs here.
+    // For now, let's just return JSON or redirect with an info message.
+    //res.json(component); // Or render a dedicated component_detail.ejs
+    res.redirect(`/${appName}/?message=` + encodeURIComponent(`Component "${component.name}" found. Detail page not implemented yet. Displaying JSON for testing.`));
+
+});
+
 
 // Route to view a specific Customer Option Set
 app.get(`/${appName}/customer-options/:optionSetId`, (req, res) => {
@@ -348,28 +511,39 @@ app.get(`/${appName}/customer-options/:optionSetId`, (req, res) => {
 
 // --- POST Routes for Adding Data ---
 
-// Add a new Parent API
-app.post(`/${appName}/add-parent`, (req, res) => {
+// Add a new Category
+app.post(`/${appName}/add-category`, (req, res) => {
     const allData = readData();
-    const newParent = {
-        id: 'parent_' + Date.now().toString().slice(-6),
-        name: req.body.parent_name || 'New Parent API',
-        description: req.body.parent_description || '',
-        parent_label: req.body.parent_label || 'strategic',
-        components: []
+    const newCategory = {
+        id: 'category_' + Date.now().toString().slice(-6),
+        type: "Category", // Explicitly set type
+        category_version: req.body.category_version || '1.0.0',
+        name: req.body.name || 'New Category',
+        status: req.body.status || 'notApproved',
+        governance_record_link: req.body.governance_record_link || '',
+        topology_view_link: req.body.topology_view_link || '',
+        rationale: req.body.rationale || '',
+        guidelines_library_tags: parseStringToArray(req.body.guidelines_library_tags),
+        controls_alignments_library_tags: parseStringToArray(req.body.controls_alignments_library_tags),
+        standards_library_tags: parseStringToArray(req.body.standards_library_tags),
+        roadmap_link: req.body.roadmap_link || '',
+        fsa_link: req.body.fsa_link || '',
+        fsa_library_tags: parseStringToArray(req.body.fsa_library_tags),
+        observability_kvp: parseKVP(req.body, 'observability_'),
+        contacts_kvp: parseKVP(req.body, 'contacts_')
     };
-    allData.push(newParent);
+    allData.push(newCategory);
     writeData(allData);
-    res.redirect(`/${appName}/?message=` + encodeURIComponent('Parent API added successfully!'));
+    res.redirect(`/${appName}/?message=` + encodeURIComponent('Category added successfully!'));
 });
 
-// Add a new Component to a Parent (including its first version's details)
-app.post(`/${appName}/parent/:parentId/add-component`, (req, res) => {
+// Add a new Component
+app.post(`/${appName}/add-component`, (req, res) => {
     const allData = readData();
-    const parentIndex = allData.findIndex(p => p.id === req.params.parentId && p.components !== undefined);
-
-    if (parentIndex === -1) {
-        return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Parent not found for component add.'));
+    // Validate that the category_id exists before adding component
+    const associatedCategory = allData.find(item => item.id === req.body.category_id && item.type === "Category");
+    if (!associatedCategory) {
+        return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Associated Category not found for component.'));
     }
 
     const newComponentVersion = {
@@ -383,38 +557,36 @@ app.post(`/${appName}/parent/:parentId/add-component`, (req, res) => {
         deployment_locations: parseDeploymentLocations(req.body, 'deployment_'),
         operational_guidelines_link: req.body.operational_guidelines_link || '',
         standards_tags: parseStringToArray(req.body.standards_tags),
-        observability_links: parseObservabilityLinks(req.body, 'obs_'),
+        observability_links: parseKVP(req.body, 'obs_'), // Using parseKVP for consistency
         base_config_source_link: req.body.base_config_source_link || '',
         supported_capabilities: parseStringToArray(req.body.supported_capabilities)
     };
 
     const newComponent = {
         id: 'comp_' + Date.now().toString().slice(-6),
-        name: req.body.comp_name || 'New Component',
-        description: req.body.comp_description || '',
+        type: "Component", // Explicitly set type
+        category_id: req.body.category_id, // Link to category
+        name: req.body.name || 'New Component', // Note: Renamed from comp_name in EJS
+        description: req.body.description || '', // Note: Renamed from comp_description in EJS
         component_type: req.body.component_type || 'service',
         component_label: req.body.component_label || 'strategic',
         component_versions: [newComponentVersion] // Initialize with the first version
     };
 
-    allData[parentIndex].components.push(newComponent);
+    allData.push(newComponent); // Add component as top-level
     writeData(allData);
-    res.redirect(`/${appName}/parent/${req.params.parentId}/?message=` + encodeURIComponent('Component added successfully with its first version!'));
+    res.redirect(`/${appName}/category/${req.body.category_id}/?message=` + encodeURIComponent('Component added successfully with its first version!'));
 });
 
 // Add a new Version to an existing Component
-app.post(`/${appName}/parent/:parentId/component/:componentId/add-version`, (req, res) => {
+app.post(`/${appName}/component/:componentId/add-version`, (req, res) => {
     const allData = readData();
-    const parent = allData.find(p => p.id === req.params.parentId && p.components !== undefined);
-
-    if (!parent) {
-        return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Parent not found for adding version.'));
-    }
-
-    const component = parent.components.find(c => c.id === req.params.componentId);
+    const component = allData.find(item => item.id === req.params.componentId && item.type === "Component");
 
     if (!component) {
-        return res.redirect(`/${appName}/parent/${req.params.parentId}/?message=` + encodeURIComponent('Error: Component not found for adding version.'));
+        // If component not found, try to redirect to category if categoryId is available, else home
+        const redirectPath = req.body.categoryId ? `/${appName}/category/${req.body.categoryId}` : `/${appName}/`;
+        return res.redirect(redirectPath + `?message=` + encodeURIComponent('Error: Component not found for adding version.'));
     }
 
     const newComponentVersion = {
@@ -422,7 +594,209 @@ app.post(`/${appName}/parent/:parentId/component/:componentId/add-version`, (req
         lifecycle_status: req.body.lifecycle_status || 'active',
         governance: {
             status: req.body.governance_status || 'draft',
-            approval_link: req.body.governance_approv
+            approval_link: req.body.governance_approval_link || ''
+        },
+        topology_diagram_link: req.body.topology_diagram_link || '',
+        deployment_locations: parseDeploymentLocations(req.body, 'new_version_deployment_'),
+        operational_guidelines_link: req.body.operational_guidelines_link || '',
+        standards_tags: parseStringToArray(req.body.standards_tags),
+        observability_links: parseKVP(req.body, 'new_version_obs_'),
+        base_config_source_link: req.body.base_config_source_link || '',
+        supported_capabilities: parseStringToArray(req.body.supported_capabilities)
+    };
+
+    // Prevent duplicate versions by string
+    const existingVersion = component.component_versions.find(v => v.version === newComponentVersion.version);
+    if (existingVersion) {
+        const redirectPath = req.body.categoryId ? `/${appName}/category/${req.body.categoryId}` : `/${appName}/`;
+        return res.redirect(redirectPath + `?message=` + encodeURIComponent(`Error: Version "${newComponentVersion.version}" already exists for this component.`));
+    }
+
+    component.component_versions.push(newComponentVersion);
+    writeData(allData);
+    const redirectPath = req.body.categoryId ? `/${appName}/category/${req.body.categoryId}` : `/${appName}/`;
+    res.redirect(redirectPath + `?message=` + encodeURIComponent('New version added to component!'));
+});
+
+// Add a new Customer Option Set
+app.post(`/${appName}/add-customer-option-set`, (req, res) => {
+    const allData = readData();
+    // Validate that the category_id exists before adding customer option set
+    const associatedCategory = allData.find(item => item.id === req.body.category_id && item.type === "Category");
+    if (!associatedCategory) {
+        return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Associated Category not found for customer option set.'));
+    }
+
+    const newCustomerOptionSet = {
+        id: 'customer_opt_' + Date.now().toString().slice(-6),
+        type: "CustomerOptionSet", // Explicitly set type
+        category_id: req.body.category_id, // Link to category
+        customer_name: req.body.customer_name || 'New Customer',
+        customer_option_version: req.body.customer_option_version || '1.0.0',
+        lifecycle_status: req.body.lifecycle_status || 'active',
+        governance: {
+            status: req.body.governance_status || 'draft',
+            approval_link: req.body.governance_approval_link || ''
+        },
+        guidance_rationale: req.body.guidance_rationale || '',
+        capabilities_required: parseStringToArray(req.body.capabilities_required),
+        options: parseCustomerOptions(req.body)
+    };
+    allData.push(newCustomerOptionSet); // Add as top-level
+    writeData(allData);
+    res.redirect(`/${appName}/category/${req.body.category_id}/?message=` + encodeURIComponent('Customer Option Set added successfully!'));
+});
+
+
+// --- POST Routes for Updating Data ---
+
+// Update Category
+app.post(`/${appName}/update-category`, (req, res) => {
+    const allData = readData();
+    const { id, category_version, name, status, governance_record_link, topology_view_link, rationale, roadmap_link, fsa_link } = req.body;
+    const categoryIndex = allData.findIndex(item => item.id === id && item.type === "Category");
+
+    if (categoryIndex > -1) {
+        allData[categoryIndex].category_version = category_version;
+        allData[categoryIndex].name = name;
+        allData[categoryIndex].status = status;
+        allData[categoryIndex].governance_record_link = governance_record_link;
+        allData[categoryIndex].topology_view_link = topology_view_link;
+        allData[categoryIndex].rationale = rationale;
+        allData[categoryIndex].guidelines_library_tags = parseStringToArray(req.body.guidelines_library_tags);
+        allData[categoryIndex].controls_alignments_library_tags = parseStringToArray(req.body.controls_alignments_library_tags);
+        allData[categoryIndex].standards_library_tags = parseStringToArray(req.body.standards_library_tags);
+        allData[categoryIndex].roadmap_link = roadmap_link;
+        allData[categoryIndex].fsa_link = fsa_link;
+        allData[categoryIndex].fsa_library_tags = parseStringToArray(req.body.fsa_library_tags);
+        allData[categoryIndex].observability_kvp = parseKVP(req.body, 'observability_');
+        allData[categoryIndex].contacts_kvp = parseKVP(req.body, 'contacts_');
+
+        writeData(allData);
+        res.redirect(`/${appName}/category/${id}/?message=` + encodeURIComponent('Category updated successfully!'));
+    } else {
+        res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Category not found for update.'));
+    }
+});
+
+
+// Update Customer Option Set
+app.post(`/${appName}/update-customer-option-set`, (req, res) => {
+    const allData = readData();
+    const { id, category_id, customer_name, customer_option_version, lifecycle_status, governance_status, governance_approval_link, guidance_rationale, capabilities_required } = req.body;
+    const optionSetIndex = allData.findIndex(item => item.id === id && item.type === "CustomerOptionSet");
+
+    if (optionSetIndex > -1) {
+        allData[optionSetIndex].category_id = category_id; // Ensure category_id is preserved/updated
+        allData[optionSetIndex].customer_name = customer_name;
+        allData[optionSetIndex].customer_option_version = customer_option_version;
+        allData[optionSetIndex].lifecycle_status = lifecycle_status;
+        allData[optionSetIndex].governance = {
+            status: governance_status || 'draft',
+            approval_link: governance_approval_link || ''
+        };
+        allData[optionSetIndex].guidance_rationale = guidance_rationale;
+        allData[optionSetIndex].capabilities_required = parseStringToArray(capabilities_required);
+        allData[optionSetIndex].options = parseCustomerOptions(req.body); // Re-parse all options
+
+        writeData(allData);
+        // Redirect back to the category page if possible, else home
+        const redirectPath = category_id ? `/${appName}/category/${category_id}` : `/${appName}/`;
+        res.redirect(redirectPath + `?message=` + encodeURIComponent('Customer Option Set updated successfully!'));
+    } else {
+        res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Customer Option Set not found for update.'));
+    }
+});
+
+
+// --- POST Routes for Deleting Data ---
+
+// Delete Category (cascades delete to associated Components and Customer Option Sets)
+app.post(`/${appName}/delete-category`, (req, res) => {
+    let allData = readData();
+    const { id } = req.body; // This is the category ID
+
+    const initialDataLength = allData.length;
+
+    // Filter out the category itself
+    allData = allData.filter(item => item.id !== id || item.type !== "Category");
+
+    // Filter out associated Components
+    allData = allData.filter(item => !(item.type === "Component" && item.category_id === id));
+
+    // Filter out associated Customer Option Sets
+    allData = allData.filter(item => !(item.type === "CustomerOptionSet" && item.category_id === id));
+
+    if (allData.length < initialDataLength) { // Check if anything was deleted
+        writeData(allData);
+        res.redirect(`/${appName}/?message=` + encodeURIComponent('Category and its associated Components/Customer Option Sets deleted successfully!'));
+    } else {
+        res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Category not found for deletion.'));
+    }
+});
+
+
+// Delete a Component (top-level)
+app.post(`/${appName}/delete-component`, (req, res) => {
+    let allData = readData();
+    const { id, categoryId } = req.body; // Get categoryId for redirect
+    const initialDataLength = allData.length;
+
+    allData = allData.filter(item => !(item.id === id && item.type === "Component"));
+
+    if (allData.length < initialDataLength) {
+        writeData(allData);
+        const redirectPath = categoryId ? `/${appName}/category/${categoryId}` : `/${appName}/`;
+        res.redirect(redirectPath + `?message=` + encodeURIComponent('Component deleted successfully!'));
+    } else {
+        const redirectPath = categoryId ? `/${appName}/category/${categoryId}` : `/${appName}/`;
+        res.redirect(redirectPath + `?message=` + encodeURIComponent('Error: Component not found for deletion.'));
+    }
+});
+
+
+// Delete a specific Component Version
+app.post(`/${appName}/component/:componentId/version/:versionString/delete`, (req, res) => {
+    const allData = readData();
+    const { categoryId } = req.body; // Get categoryId for redirect
+    const component = allData.find(item => item.id === req.params.componentId && item.type === "Component");
+
+    if (!component) {
+        const redirectPath = categoryId ? `/${appName}/category/${categoryId}` : `/${appName}/`;
+        return res.redirect(redirectPath + `?message=` + encodeURIComponent('Error: Component not found for version deletion.'));
+    }
+
+    const initialVersionCount = component.component_versions.length;
+    component.component_versions = component.component_versions.filter(v => v.version !== req.params.versionString);
+
+    if (component.component_versions.length < initialVersionCount) {
+        writeData(allData);
+        const redirectPath = categoryId ? `/${appName}/category/${categoryId}` : `/${appName}/`;
+        res.redirect(redirectPath + `?message=` + encodeURIComponent('Component version deleted successfully!'));
+    } else {
+        const redirectPath = categoryId ? `/${appName}/category/${categoryId}` : `/${appName}/`;
+        res.redirect(redirectPath + `?message=` + encodeURIComponent('Error: Component version not found for deletion.'));
+    }
+});
+
+// Delete Customer Option Set (top-level)
+app.post(`/${appName}/delete-customer-option-set`, (req, res) => {
+    let allData = readData();
+    const { id, categoryId } = req.body; // Get categoryId for redirect
+    const initialDataLength = allData.length;
+
+    allData = allData.filter(item => !(item.id === id && item.type === "CustomerOptionSet"));
+
+    if (allData.length < initialDataLength) {
+        writeData(allData);
+        const redirectPath = categoryId ? `/${appName}/category/${categoryId}` : `/${appName}/`;
+        res.redirect(redirectPath + `?message=` + encodeURIComponent('Customer Option Set deleted successfully!'));
+    } else {
+        const redirectPath = categoryId ? `/${appName}/category/${categoryId}` : `/${appName}/`;
+        res.redirect(redirectPath + `?message=` + encodeURIComponent('Error: Customer Option Set not found for deletion.'));
+    }
+});
+
 
 // --- File Upload/Download Routes ---
 
@@ -466,4 +840,21 @@ app.post(`/${appName}/upload`, upload.single('jsonFile'), (req, res) => {
             res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Invalid JSON file uploaded.'));
         }
     });
+});
+
+
+// --- Search API Endpoint ---
+// Allows querying the data via URL parameters and returns JSON results
+app.get(`/${appName}/search`, (req, res) => {
+    const query = req.query; // Query parameters from the URL (e.g., ?keyword=proxy&site=London)
+    const filteredResults = filterData(query); // Call the filtering logic
+    res.json(filteredResults); // Return results as JSON
+});
+
+
+// --- Server Start ---
+// Starts the Express server, listening on the configured port
+app.listen(port, () => { // Removed 'localhost' to allow binding to all interfaces for deployment
+    console.log(`Service started locally at http://localhost:${port}/${appName}/`);
+    console.log(`For public access (if deployed), check your server/PaaS assigned URL with prefix /${appName}/`);
 });
