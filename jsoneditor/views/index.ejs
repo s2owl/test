@@ -5,24 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network API Management</title>
     <style>
-        /* General Body and Container Styles - Keep in sync with customer_option_detail.ejs if not externalised */
+        /* General Body and Container Styles */
         body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
         .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1, h2, h3, h4 { color: #0056b3; } /* Added h3, h4 for consistency */
+        h1, h2, h3, h4 { color: #0056b3; }
 
         /* Form Styles */
         form { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fafafa; }
         form label { display: block; margin-bottom: 5px; font-weight: bold; }
         form input[type="text"],
         form textarea,
-        form input[type="file"] {
+        form input[type="file"],
+        form select {
             width: calc(100% - 22px);
             padding: 10px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-        form textarea { min-height: 60px; resize: vertical; } /* Allow vertical resizing for textareas */
+        form textarea { min-height: 60px; resize: vertical; }
         form button {
             background-color: #28a745;
             color: white;
@@ -41,12 +42,13 @@
         .item .details h3 { margin: 0 0 5px 0; color: #343a40; }
         .item .details p { margin: 0; font-size: 0.9em; color: #555; }
 
-        /* Sub-component display styles (can apply to customer options too) */
+        /* Sub-component display styles (for nested KVP/libraries, etc.) */
         .sub-component-display {
             background-color: #f0f0f0;
             padding: 10px;
             border-radius: 5px;
             margin-top: 10px;
+            font-size: 0.9em;
         }
         .sub-component-display ul {
             list-style-type: disc;
@@ -56,9 +58,11 @@
         .sub-component-display li {
             margin-bottom: 5px;
         }
+        .sub-component-display strong { color: #555; }
 
-        /* Action Buttons (Edit, Delete, Move) */
-        .actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; } /* Added margin-top for spacing */
+
+        /* Action Buttons (Edit, Delete) */
+        .actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
         .actions button,
         .actions a.button {
             background-color: #007bff;
@@ -85,7 +89,56 @@
             border: 1px solid #c3e6cb;
         }
 
-        /* Dynamic Fields Section */
+        /* Search Form Specific Styles */
+        .search-form {
+            padding: 20px;
+            border: 1px solid #cceeff;
+            background-color: #e6f7ff;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .search-form label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        .search-form input[type="text"],
+        .search-form select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #a8d9f7;
+            border-radius: 4px;
+            background-color: #f0faff;
+        }
+        .search-form button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .search-form button:hover {
+            background-color: #0056b3;
+        }
+
+        /* File Upload/Download Section Styles */
+        .file-management-section {
+            margin-top: 30px;
+            border-top: 1px dashed #ccc;
+            padding-top: 20px;
+        }
+        .file-management-section form {
+            background-color: #f8f8f8;
+            border: 1px solid #eee;
+        }
+        .file-management-section button { background-color: #17a2b8; }
+        .file-management-section button:hover { background-color: #138496; }
+
+
+        /* Dynamic Fields (For add forms for KVP, etc.) */
         .dynamic-fields-section {
             border: 1px dashed #b9d8f7;
             padding: 10px;
@@ -125,6 +178,7 @@
         .add-field-button:hover {
             background-color: #0056b3;
         }
+
     </style>
 </head>
 <body>
@@ -137,41 +191,267 @@
             </div>
         <% } %>
 
-        <h2>Parent APIs</h2>
-        <% if (parents && parents.length > 0) { %>
-            <% parents.forEach(parent => { %>
+        <hr style="margin: 30px 0; border: 0; border-top: 1px dashed #ccc;">
+
+        <h2>Search Network Inventory</h2>
+        <form action="/<%= appName %>/search" method="GET" class="search-form">
+            <label for="searchKeyword">General Keyword (e.g., proxy, SSL interception):</label>
+            <input type="text" id="searchKeyword" name="keyword" placeholder="Search across names, descriptions, capabilities...">
+
+            <label for="searchCategoryName">Category Name:</label>
+            <input type="text" id="searchCategoryName" name="categoryName" placeholder="e.g., Network Load Balancer">
+
+            <label for="searchCategoryStatus">Category Status:</label>
+            <input type="text" id="searchCategoryStatus" name="categoryStatus" placeholder="e.g., isApproved, notApproved">
+
+            <label for="searchComponentName">Component Name:</label>
+            <input type="text" id="searchComponentName" name="componentName" placeholder="e.g., F5 LTM">
+
+            <label for="searchComponentType">Component Type:</label>
+            <input type="text" id="searchComponentType" name="componentType" placeholder="e.g., service, engine, gateway">
+
+            <label for="searchLifecycleStatus">Lifecycle Status (Component Version):</label>
+            <select id="searchLifecycleStatus" name="lifecycleStatus">
+                <option value="">-- Any --</option>
+                <option value="active">Active</option>
+                <option value="deprecated">Deprecated</option>
+                <option value="beta">Beta</option>
+                <option value="retired">Retired</option>
+            </select>
+
+            <label for="searchSite">Deployment Site:</label>
+            <input type="text" id="searchSite" name="site" placeholder="e.g., London-DC1">
+
+            <label for="searchCustomerName">Customer Option Name:</label>
+            <input type="text" id="searchCustomerName" name="customerName" placeholder="e.g., Round Robin">
+
+            <button type="submit">Search</button>
+        </form>
+        <p><small>Search results will open in a new tab as JSON data.</small></p>
+
+        <hr style="margin: 30px 0; border: 0; border-top: 1px dashed #ccc;">
+
+
+        <h2>Categories</h2>
+        <% if (categories && categories.length > 0) { %>
+            <% categories.forEach(category => { %>
                 <div class="item">
                     <div class="details">
-                        <h3><%= parent.name %></h3>
-                        <p><%= parent.description %></p>
-                        <p><strong>Label:</strong> <%= parent.parent_label %></p>
+                        <h3><%= category.name %> (v<%= category.category_version %>)</h3>
+                        <p><%= category.rationale %></p>
+                        <p><strong>Status:</strong> <%= category.status %></p>
+                        <p><strong>Governance Link:</strong> <a href="<%= category.governance_record_link %>" target="_blank"><%= category.governance_record_link %></a></p>
+                        <p><strong>Topology:</strong> <a href="<%= category.topology_view_link %>" target="_blank">View Diagram</a></p>
+                        <p><strong>Roadmap:</strong> <a href="<%= category.roadmap_link %>" target="_blank">View Roadmap</a></p>
+
+                        <div class="sub-component-display">
+                            <% if (category.guidelines_library_tags && category.guidelines_library_tags.length > 0) { %>
+                                <div><strong>Guidelines:</strong> <%= category.guidelines_library_tags.join(', ') %></div>
+                            <% } %>
+                            <% if (category.controls_alignments_library_tags && category.controls_alignments_library_tags.length > 0) { %>
+                                <div><strong>Controls Alignments:</strong> <%= category.controls_alignments_library_tags.join(', ') %></div>
+                            <% } %>
+                            <% if (category.standards_library_tags && category.standards_library_tags.length > 0) { %>
+                                <div><strong>Standards:</strong> <%= category.standards_library_tags.join(', ') %></div>
+                            <% } %>
+                            <% if (category.fsa_link) { %>
+                                <div><strong>FSA Link:</strong> <a href="<%= category.fsa_link %>" target="_blank"><%= category.fsa_link %></a></div>
+                            <% } %>
+                            <% if (category.fsa_library_tags && category.fsa_library_tags.length > 0) { %>
+                                <div><strong>FSA Tags:</strong> <%= category.fsa_library_tags.join(', ') %></div>
+                            <% } %>
+                            <% if (category.observability_kvp && category.observability_kvp.length > 0) { %>
+                                <div><strong>Observability:</strong>
+                                    <ul>
+                                        <% category.observability_kvp.forEach(item => { %>
+                                            <li><%= item.key %>: <a href="<%= item.value %>" target="_blank"><%= item.value %></a></li>
+                                        <% }) %>
+                                    </ul>
+                                </div>
+                            <% } %>
+                            <% if (category.contacts_kvp && category.contacts_kvp.length > 0) { %>
+                                <div><strong>Contacts:</strong>
+                                    <ul>
+                                        <% category.contacts_kvp.forEach(item => { %>
+                                            <li><%= item.key %>: <%= item.value %></li>
+                                        <% }) %>
+                                    </ul>
+                                </div>
+                            <% } %>
+                        </div>
                     </div>
                     <div class="actions">
-                        <a href="/<%= appName %>/parent/<%= parent.id %>" class="button">View/Edit</a>
-                        <form action="/<%= appName %>/delete-parent" method="POST" style="display:inline;">
-                            <input type="hidden" name="id" value="<%= parent.id %>">
+                        <a href="/<%= appName %>/category/<%= category.id %>" class="button">View/Edit</a>
+                        <form action="/<%= appName %>/delete-category" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this Category? (Components & Customer Options will remain)');">
+                            <input type="hidden" name="id" value="<%= category.id %>">
                             <button type="submit" class="delete">Delete</button>
                         </form>
                     </div>
                 </div>
             <% }); %>
         <% } else { %>
-            <p>No Parent APIs defined yet.</p>
+            <p>No Categories defined yet.</p>
         <% } %>
 
-        <h2>Add New Parent API</h2>
-        <form action="/<%= appName %>/add-parent" method="POST">
-            <label for="parent_name">Parent API Name:</label>
-            <input type="text" id="parent_name" name="parent_name" required>
+        <h2>Add New Category</h2>
+        <form action="/<%= appName %>/add-category" method="POST">
+            <label for="category_name">Category Name:</label>
+            <input type="text" id="category_name" name="name" required>
 
-            <label for="parent_description">Description:</label>
-            <textarea id="parent_description" name="parent_description"></textarea>
+            <label for="category_version">Category Version:</label>
+            <input type="text" id="category_version" name="category_version" value="1.0.0">
 
-            <label for="parent_label">Label:</label>
-            <input type="text" id="parent_label" name="parent_label">
+            <label for="category_status">Status (e.g., isApproved, notApproved):</label>
+            <input type="text" id="category_status" name="status" value="notApproved">
 
-            <button type="submit">Add Parent API</button>
+            <label for="governance_record_link">Governance Record Link:</label>
+            <input type="text" id="governance_record_link" name="governance_record_link">
+
+            <label for="topology_view_link">Topology View Link:</label>
+            <input type="text" id="topology_view_link" name="topology_view_link">
+
+            <label for="rationale">Rationale:</label>
+            <textarea id="rationale" name="rationale"></textarea>
+
+            <h3>Library Tags (comma-separated):</h3>
+            <label for="guidelines_library_tags">Guidelines:</label>
+            <input type="text" id="guidelines_library_tags" name="guidelines_library_tags">
+
+            <label for="controls_alignments_library_tags">Controls Alignments:</label>
+            <input type="text" id="controls_alignments_library_tags" name="controls_alignments_library_tags">
+
+            <label for="standards_library_tags">Standards:</label>
+            <input type="text" id="standards_library_tags" name="standards_library_tags">
+
+            <label for="roadmap_link">Roadmap Link:</label>
+            <input type="text" id="roadmap_link" name="roadmap_link">
+
+            <label for="fsa_link">FSA Link:</label>
+            <input type="text" id="fsa_link" name="fsa_link">
+
+            <label for="fsa_library_tags">FSA Library Tags:</label>
+            <input type="text" id="fsa_library_tags" name="fsa_library_tags">
+
+            <h3>Observability (Key-Value Pairs):</h3>
+            <div id="add-observability-kvp-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="observability_key_0" placeholder="Key (e.g., dashboard)">
+                    <input type="text" name="observability_value_0" placeholder="Value (link)">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'add-observability-kvp-container', 'observability_')">Add Observability Link</button>
+
+            <h3>Contacts (Key-Value Pairs):</h3>
+            <div id="add-contacts-kvp-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="contacts_key_0" placeholder="Key (e.g., team)">
+                    <input type="text" name="contacts_value_0" placeholder="Value (name/email)">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'add-contacts-kvp-container', 'contacts_')">Add Contact</button>
+
+            <button type="submit">Add Category</button>
         </form>
+
+        <hr style="margin: 30px 0; border: 0; border-top: 1px dashed #ccc;">
+
+
+        <h2>Components</h2>
+        <% if (components && components.length > 0) { %>
+            <% components.forEach(component => { %>
+                <div class="item">
+                    <div class="details">
+                        <h3><%= component.name %> (v<%= component.component_versions[0] ? component.component_versions[0].version : 'N/A' %>)</h3>
+                        <p><%= component.description %></p>
+                        <p><strong>Type:</strong> <%= component.component_type %></p>
+                        <p><strong>Category:</strong> <%= component.category_id %></p>
+                    </div>
+                    <div class="actions">
+                        <a href="/<%= appName %>/component/<%= component.id %>" class="button">View/Edit</a>
+                        <form action="/<%= appName %>/delete-component" method="POST" style="display:inline;">
+                            <input type="hidden" name="id" value="<%= component.id %>">
+                            <button type="submit" class="delete">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p>No Components defined yet.</p>
+        <% } %>
+
+        <h2>Add New Component</h2>
+        <form action="/<%= appName %>/add-component" method="POST">
+            <label for="component_name">Component Name:</label>
+            <input type="text" id="component_name" name="name" required>
+
+            <label for="component_description">Description:</label>
+            <textarea id="component_description" name="description"></textarea>
+
+            <label for="component_type">Component Type:</label>
+            <input type="text" id="component_type" name="component_type">
+
+            <label for="component_label">Component Label:</label>
+            <input type="text" id="component_label" name="component_label">
+
+            <label for="component_category_id">Associated Category ID:</label>
+            <input type="text" id="component_category_id" name="category_id" placeholder="e.g., category_nlb" required>
+
+            <h3>Initial Version Details:</h3>
+            <label for="version_string">Version String:</label>
+            <input type="text" id="version_string" name="version" value="1.0.0" required>
+
+            <label for="lifecycle_status">Lifecycle Status:</label>
+            <input type="text" id="lifecycle_status" name="lifecycle_status" value="active">
+
+            <h4>Governance:</h4>
+            <label for="governance_status">Status:</label>
+            <input type="text" id="governance_status" name="governance_status" value="approved">
+            <label for="governance_approval_link">Approval Link:</label>
+            <input type="text" id="governance_approval_link" name="governance_approval_link">
+
+            <label for="topology_diagram_link">Topology Diagram Link:</label>
+            <input type="text" id="topology_diagram_link" name="topology_diagram_link">
+
+            <h4>Deployment Locations:</h4>
+            <div id="add-deployment-locations-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="deployment_site_0" placeholder="Site">
+                    <input type="text" name="deployment_zone_0" placeholder="Zone">
+                    <input type="text" name="deployment_segment_0" placeholder="Segment">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('deployment-location', 'add-deployment-locations-container', 'deployment_')">Add Deployment Location</button>
+
+            <label for="operational_guidelines_link">Operational Guidelines Link:</label>
+            <input type="text" id="operational_guidelines_link" name="operational_guidelines_link">
+
+            <label for="standards_tags">Standards Tags (comma-separated):</label>
+            <input type="text" id="standards_tags" name="standards_tags">
+
+            <h4>Observability Links (Key-Value Pairs):</h4>
+            <div id="add-observability-links-container">
+                <div class="dynamic-field-row">
+                    <input type="text" name="obs_key_0" placeholder="Key (e.g., logging)">
+                    <input type="text" name="obs_value_0" placeholder="Value (e.g., link)">
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="add-field-button" onclick="addDynamicField('observability-link', 'add-observability-links-container', 'obs_')">Add Observability Link</button>
+
+            <label for="base_config_source_link">Base Config Source Link:</label>
+            <input type="text" id="base_config_source_link" name="base_config_source_link">
+
+            <label for="supported_capabilities">Supported Capabilities (comma-separated):</label>
+            <input type="text" id="supported_capabilities" name="supported_capabilities">
+
+            <button type="submit">Add Component with Initial Version</button>
+        </form>
+
+        <hr style="margin: 30px 0; border: 0; border-top: 1px dashed #ccc;">
+
 
         <h2>Customer Option Sets</h2>
         <% if (customerOptionSets && customerOptionSets.length > 0) { %>
@@ -181,7 +461,7 @@
                         <h3><%= optionSet.customer_name %></h3>
                         <p><strong>Version:</strong> <%= optionSet.customer_option_version %></p>
                         <p><strong>Lifecycle:</strong> <%= optionSet.lifecycle_status %></p>
-                        <p><strong>Capabilities Required:</strong> <%= optionSet.capabilities_required.join(', ') %></p>
+                        <p><strong>Associated Category:</strong> <%= optionSet.category_id %></p>
                     </div>
                     <div class="actions">
                         <a href="/<%= appName %>/customer-options/<%= optionSet.id %>" class="button">View/Edit</a>
@@ -204,14 +484,17 @@
             <label for="customer_option_version">Version:</label>
             <input type="text" id="customer_option_version" name="customer_option_version" required>
 
-            <label for="lifecycle_status">Lifecycle Status:</label>
-            <input type="text" id="lifecycle_status" name="lifecycle_status">
+            <label for="customer_option_category_id">Associated Category ID:</label>
+            <input type="text" id="customer_option_category_id" name="category_id" placeholder="e.g., category_nlb" required>
+
+            <label for="customer_option_lifecycle_status">Lifecycle Status:</label>
+            <input type="text" id="customer_option_lifecycle_status" name="lifecycle_status">
 
             <h4>Governance:</h4>
-            <label for="governance_status">Status:</label>
-            <input type="text" id="governance_status" name="governance_status">
-            <label for="governance_approval_link">Approval Link:</label>
-            <input type="text" id="governance_approval_link" name="governance_approval_link">
+            <label for="customer_option_governance_status">Status:</label>
+            <input type="text" id="customer_option_governance_status" name="governance_status">
+            <label for="customer_option_governance_approval_link">Approval Link:</label>
+            <input type="text" id="customer_option_governance_approval_link" name="governance_approval_link">
 
             <label for="guidance_rationale">Guidance / Rationale:</label>
             <textarea id="guidance_rationale" name="guidance_rationale"></textarea>
@@ -220,33 +503,87 @@
             <input type="text" id="capabilities_required" name="capabilities_required">
 
             <h3>Options:</h3>
-            <div id="customer-options-container">
+            <div id="add-customer-options-container">
                 <div class="dynamic-field-row">
                     <input type="text" name="option_name_0" placeholder="Option Name" required>
                     <textarea name="config_pseudocode_0" placeholder="Config Pseudo-code Block"></textarea>
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 </div>
             </div>
-            <button type="button" class="add-field-button" onclick="addDynamicField('customer-option', 'customer-options-container', 'option_')">Add Option</button>
+            <button type="button" class="add-field-button" onclick="addDynamicField('customer-option', 'add-customer-options-container', 'option_')">Add Option</button>
 
             <button type="submit">Add Customer Option Set</button>
         </form>
 
+        <hr style="margin: 30px 0; border: 0; border-top: 1px dashed #ccc;">
+
+        <div class="file-management-section">
+            <h2>Manage All Data File</h2>
+            <form action="/<%= appName %>/upload" method="POST" enctype="multipart/form-data">
+                <label for="jsonFile">Upload JSON File:</label>
+                <input type="file" id="jsonFile" name="jsonFile" accept=".json" required>
+                <button type="submit">Upload & Replace All</button>
+                <p><small>This will replace all current data with the contents of your uploaded JSON file.</small></p>
+            </form>
+
+            <form action="/<%= appName %>/download" method="GET">
+                <button type="submit">Download All Current JSON</button>
+                <p><small>Downloads a copy of all your current data as 'mydata.json'.</small></p>
+            </form>
+        </div>
+
     </div>
 
     <script>
-        // Use a global counter for the dynamic options, for simplicity in edit/add form
-        // In a more complex app, you might re-initialize this based on existing options length
-        let customerOptionCount = 1; // Start at 1 for the initial row
+        // Counters for dynamic fields for different forms
+        let addCategoryObservabilityCount = 1;
+        let addCategoryContactsCount = 1;
+        let addComponentDeploymentLocationCount = 1;
+        let addComponentObservabilityLinkCount = 1;
+        let addCustomerOptionCount = 1;
 
+        // General purpose function for adding dynamic KVP/Array fields
         function addDynamicField(type, containerId, fieldPrefix) {
             const container = document.getElementById(containerId);
             const newRow = document.createElement('div');
             newRow.className = 'dynamic-field-row';
 
-            const currentIndex = customerOptionCount++; // Increment and use
+            let currentIndex;
+            if (containerId === 'add-observability-kvp-container') {
+                currentIndex = addCategoryObservabilityCount++;
+            } else if (containerId === 'add-contacts-kvp-container') {
+                currentIndex = addCategoryContactsCount++;
+            } else if (containerId === 'add-deployment-locations-container') {
+                currentIndex = addComponentDeploymentLocationCount++;
+            } else if (containerId === 'add-observability-links-container') {
+                currentIndex = addComponentObservabilityLinkCount++;
+            } else if (containerId === 'add-customer-options-container') {
+                currentIndex = addCustomerOptionCount++;
+            } else {
+                // Fallback, though explicit counters are better for complex forms
+                currentIndex = container.children.length;
+            }
 
-            if (type === 'customer-option') {
+            if (type === 'kvp') {
+                newRow.innerHTML = `
+                    <input type="text" name="${fieldPrefix}key_${currentIndex}" placeholder="Key (e.g., team)" required>
+                    <input type="text" name="${fieldPrefix}value_${currentIndex}" placeholder="Value" required>
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                `;
+            } else if (type === 'deployment-location') {
+                newRow.innerHTML = `
+                    <input type="text" name="${fieldPrefix}site_${currentIndex}" placeholder="Site" required>
+                    <input type="text" name="${fieldPrefix}zone_${currentIndex}" placeholder="Zone" required>
+                    <input type="text" name="${fieldPrefix}segment_${currentIndex}" placeholder="Segment" required>
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                `;
+            } else if (type === 'observability-link') {
+                newRow.innerHTML = `
+                    <input type="text" name="${fieldPrefix}key_${currentIndex}" placeholder="Key (e.g., logging)" required>
+                    <input type="text" name="${fieldPrefix}value_${currentIndex}" placeholder="Value (e.g., link)" required>
+                    <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
+                `;
+            } else if (type === 'customer-option') {
                 newRow.innerHTML = `
                     <input type="text" name="${fieldPrefix}name_${currentIndex}" placeholder="Option Name" required>
                     <textarea name="config_pseudocode_${currentIndex}" placeholder="Config Pseudo-code Block"></textarea>
