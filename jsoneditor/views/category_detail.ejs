@@ -264,7 +264,7 @@
                         <% }) %>
                     <% } %>
                 </div>
-                <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'edit-observability-kvp-container', 'observability_', <%= category.observability_kvp ? category.observability_kvp.length : 0 %>)">Add Observability Link</button>
+                <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'edit-observability-kvp-container', 'observability_', <%= category.observability_kvp ? category.observability_kvp.length : 0 %>, 'edit')">Add Observability Link</button>
 
                 <h3>Contacts (Key-Value Pairs):</h3>
                 <div id="edit-contacts-kvp-container">
@@ -278,7 +278,7 @@
                         <% }) %>
                     <% } %>
                 </div>
-                <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'edit-contacts-kvp-container', 'contacts_', <%= category.contacts_kvp ? category.contacts_kvp.length : 0 %>)">Add Contact</button>
+                <button type="button" class="add-field-button" onclick="addDynamicField('kvp', 'edit-contacts-kvp-container', 'contacts_', <%= category.contacts_kvp ? category.contacts_kvp.length : 0 %>, 'edit')">Add Contact</button>
 
 
                 <button type="submit">Save Category Changes</button>
@@ -356,7 +356,7 @@
                                                 <p><strong>Deployment Locations:</strong></p>
                                                 <ul>
                                                     <% version.deployment_locations.forEach(loc => { %>
-                                                        <li>Site: <%= loc.site %>, Zone: <%= loc.zone %>, Segment: <%= loc.segment %></li>
+                                                        <li>Site: <%= loc.site %>, Zone: <%= loc.zone %>, Segment: <%= loc.segment %>, Country: <%= loc.country %></li>
                                                     <% }) %>
                                                 </ul>
                                             <% } %>
@@ -417,6 +417,7 @@
                                         <input type="text" name="new_version_deployment_site_0" placeholder="Site">
                                         <input type="text" name="new_version_deployment_zone_0" placeholder="Zone">
                                         <input type="text" name="new_version_deployment_segment_0" placeholder="Segment">
+                                        <input type="text" name="new_version_deployment_country_0" placeholder="Country">
                                         <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                                     </div>
                                 </div>
@@ -520,6 +521,7 @@
                     <input type="text" name="deployment_site_0" placeholder="Site">
                     <input type="text" name="deployment_zone_0" placeholder="Zone">
                     <input type="text" name="deployment_segment_0" placeholder="Segment">
+                    <input type="text" name="deployment_country_0" placeholder="Country">
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 </div>
             </div>
@@ -694,14 +696,15 @@
                     <input type="text" name="${fieldPrefix}site_${currentIndex}" placeholder="Site" required>
                     <input type="text" name="${fieldPrefix}zone_${currentIndex}" placeholder="Zone" required>
                     <input type="text" name="${fieldPrefix}segment_${currentIndex}" placeholder="Segment" required>
+                    <input type="text" name="${fieldPrefix}country_${currentIndex}" placeholder="Country">
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 `;
-            } else if (type === 'flag-link') { // Used for Component ARR/Risk Flags (in add/edit forms)
+            } else if (type === 'flag-link') { // Used for Component ARR/Risk Flags
                 newRow.innerHTML = `
                     <input type="text" name="${fieldPrefix}link_${currentIndex}" placeholder="Link" required>
                     <button type="button" onclick="this.closest('.dynamic-field-row').remove()">Remove</button>
                 `;
-            } else if (type === 'customer-option') { // Used for Customer Option Set Options (in add/edit forms)
+            } else if (type === 'customer-option') { // Used for Customer Option Set Options
                 newRow.innerHTML = `
                     <input type="text" name="${fieldPrefix}name_${currentIndex}" placeholder="Option Name" required>
                     <textarea name="config_pseudocode_${currentIndex}" placeholder="Config Pseudo-code Block"></textarea>
