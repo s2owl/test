@@ -47,8 +47,8 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/F5-LTM-001" },
         "topology_diagram_link": "https://confluence.example.com/f5/ltm-v15-deployment.png",
         "deployment_locations": [
-          {"site": "Internal-DC1", "zone": "Core-Network", "segment": "Private-Services"},
-          {"site": "Internal-DC2", "zone": "Core-Network", "segment": "Private-Services"}
+          {"site": "Internal-DC1", "zone": "Core-Network", "segment": "Private-Services", "country": "UK"},
+          {"site": "Internal-DC2", "zone": "Core-Network", "segment": "Private-Services", "country": "IE"}
         ],
         "operational_guidelines_link": "https://docs.example.com/f5-ltm-ops-guide",
         "standards_tags": ["PCI-DSS", "NIST800-53"],
@@ -81,7 +81,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/AVI-LB-002" },
         "topology_diagram_link": "https://confluence.example.com/avi/deployment-v20.png",
         "deployment_locations": [
-          {"site": "Internal-Cloud-AZ1", "zone": "App-Zone-A", "segment": "Internal-Microservices"}
+          {"site": "Internal-Cloud-AZ1", "zone": "App-Zone-A", "segment": "Internal-Microservices", "country": "UK"}
         ],
         "operational_guidelines_link": "https://docs.example.com/avi-lb-ops-guide",
         "standards_tags": ["Cloud-Native-Best-Practices"],
@@ -112,7 +112,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/NGINX-LB-003" },
         "topology_diagram_link": "https://confluence.example.com/nginx/basic-lb-diagram.png",
         "deployment_locations": [
-          {"site": "Internal-Cloud-AZ2", "zone": "Web-Tier", "segment": "Front-End-Services"}
+          {"site": "Internal-Cloud-AZ2", "zone": "Web-Tier", "segment": "Front-End-Services", "country": "UK"}
         ],
         "operational_guidelines_link": "https://docs.example.com/nginx-lb-ops-guide",
         "standards_tags": ["HTTP-Standard"],
@@ -245,8 +245,8 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/BC-PROXY-001" },
         "topology_diagram_link": "https://confluence.example.com/bluecoat/proxysg-deployment.png",
         "deployment_locations": [
-          {"site": "Internal-DC1", "zone": "DMZ-Internal", "segment": "Staff-Network"},
-          {"site": "Internal-DC2", "zone": "DMZ-Internal", "segment": "Server-Network"}
+          {"site": "Internal-DC1", "zone": "DMZ-Internal", "segment": "Staff-Network", "country": "UK"},
+          {"site": "Internal-DC2", "zone": "DMZ-Internal", "segment": "Server-Network", "country": "UK"}
         ],
         "operational_guidelines_link": "https://docs.example.com/bluecoat-proxysg-ops",
         "standards_tags": ["PCI-DSS", "ISO27001"],
@@ -279,7 +279,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/ZS-ZIA-002" },
         "topology_diagram_link": "https://confluence.example.com/zscaler/zia-deployment.png",
         "deployment_locations": [
-          {"site": "Global-Cloud", "zone": "Edge-PoP", "segment": "Remote-User-Access"}
+          {"site": "Global-Cloud", "zone": "Edge-PoP", "segment": "Remote-User-Access", "country": "USA"}
         ],
         "operational_guidelines_link": "https://docs.example.com/zscaler-zia-ops",
         "standards_tags": ["Cloud-Security-Alliance", "GDPR"],
@@ -337,7 +337,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/QIP-DNS-001" },
         "topology_diagram_link": "https://confluence.example.com/qip/internal-dns-dhcp.png",
         "deployment_locations": [
-          {"site": "Internal-DC1", "zone": "Management-Network", "segment": "Core-IPAM"}
+          {"site": "Internal-DC1", "zone": "Management-Network", "segment": "Core-IPAM", "country": "UK"}
         ],
         "operational_guidelines_link": "https://docs.example.com/qip-ops-guide",
         "standards_tags": ["RFC2131-DHCP", "RFC2136-DDNS"],
@@ -368,7 +368,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/EIP-DNS-002" },
         "topology_diagram_link": "https://confluence.example.com/efficientip/ddi-internal.png",
         "deployment_locations": [
-          {"site": "Internal-DC2", "zone": "Management-Network", "segment": "Core-DDI"}
+          {"site": "Internal-DC2", "zone": "Management-Network", "segment": "Core-DDI", "country": "UK"}
         ],
         "operational_guidelines_link": "https://docs.example.com/efficientip-ops-guide",
         "standards_tags": ["DNSSEC-Standard"],
@@ -399,7 +399,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/F5-GTM-003" },
         "topology_diagram_link": "https://confluence.example.com/f5/gtm-gslb-diagram.png",
         "deployment_locations": [
-          {"site": "Internal-DC1", "zone": "GSLB-Tier", "segment": "Global-Services"}
+          {"site": "Internal-DC1", "zone": "GSLB-Tier", "segment": "Global-Services", "country": "UK"}
         ],
         "operational_guidelines_link": "https://docs.example.com/f5-gtm-ops-guide",
         "standards_tags": ["GSLB-Principles"],
@@ -429,7 +429,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/IB-EXT-DNS-004" },
         "topology_diagram_link": "https://confluence.example.com/infoblox/external-dns-deployment.png",
         "deployment_locations": [
-          {"site": "Public-Cloud-AZ1", "zone": "DNS-Edge", "segment": "External-DNS"}
+          {"site": "Public-Cloud-AZ1", "zone": "DNS-Edge", "segment": "External-DNS", "country": "USA"}
         ],
         "operational_guidelines_link": "https://docs.example.com/infoblox-ext-dns-ops-guide",
         "standards_tags": ["DNSSEC-Standard", "RFC8484-DoH"],
@@ -460,7 +460,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/OCI-DNS-005" },
         "topology_diagram_link": "https://confluence.example.com/oci/dns-service-diagram.png",
         "deployment_locations": [
-          {"site": "OCI-Region-UK", "zone": "Global-Edge", "segment": "Public-Cloud-DNS"}
+          {"site": "OCI-Region-UK", "zone": "Global-Edge", "segment": "Public-Cloud-DNS", "country": "UK"}
         ],
         "operational_guidelines_link": "https://docs.oracle.com/en-us/cloud/dns-service-ops",
         "standards_tags": ["Cloud-Native"],
@@ -491,7 +491,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/AKAMAI-DNS-006" },
         "topology_diagram_link": "https://confluence.example.com/akamai/dns-shield-diagram.png",
         "deployment_locations": [
-          {"site": "Akamai-Edge", "zone": "Global-PoP", "segment": "DDoS-Protection"}
+          {"site": "Akamai-Edge", "zone": "Global-PoP", "segment": "DDoS-Protection", "country": "USA"}
         ],
         "operational_guidelines_link": "https://docs.akamai.com/dns-shield-ops",
         "standards_tags": ["Cybersecurity-Standard"],
@@ -549,7 +549,7 @@
         "governance": { "status": "approved", "approval_link": "https://jira.example.com/CISCO-CAT-001" },
         "topology_diagram_link": "https://confluence.example.com/cisco/catalyst-campus-deployment.png",
         "deployment_locations": [
-          {"site": "Main-Campus-Building-A", "zone": "Access-Layer", "segment": "User-VLANs"}
+          {"site": "Main-Campus-Building-A", "zone": "Access-Layer", "segment": "User-VLANs", "country": "UK"}
         ],
         "operational_guidelines_link": "https://docs.example.com/cisco-catalyst-ops-guide",
         "standards_tags": ["IEEE802.1X", "STP-Standard"],
