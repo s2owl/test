@@ -108,15 +108,17 @@ const parseFlagLinks = (body, prefix = '') => {
 };
 
 
-// Parses dynamic form fields for deployment locations (e.g., deployment_site_0, deployment_zone_0)
+// Parses dynamic form fields for deployment locations (e.g., deployment_site_0, deployment_zone_0, deployment_country_0)
 const parseDeploymentLocations = (body, prefix = 'deployment_') => {
     const locations = [];
     let i = 0;
-    while (body[`${prefix}site_${i}`] || body[`${prefix}zone_${i}`] || body[`${prefix}segment_${i}`]) {
+    // Check for any part of a location row to determine if it exists
+    while (body[`${prefix}site_${i}`] || body[`${prefix}zone_${i}`] || body[`${prefix}segment_${i}`] || body[`${prefix}country_${i}`]) {
         locations.push({
             site: body[`${prefix}site_${i}`] || '',
             zone: body[`${prefix}zone_${i}`] || '',
-            segment: body[`${prefix}segment_${i}`] || ''
+            segment: body[`${prefix}segment_${i}`] || '',
+            country: body[`${prefix}country_${i}`] || '' // NEW: Capture country
         });
         i++;
     }
@@ -177,6 +179,7 @@ const filterData = (query) => {
                 entityMatch = true;
             }
 
+
             // Temporarily store filtered children for this category
             const filteredComponentsForCategory = [];
             const filteredCustomerOptionsForCategory = [];
@@ -197,10 +200,10 @@ const filterData = (query) => {
                     componentMatch = true;
                 }
                 // Check ARR/Risk flags
-                if (query.arrFlag && component.arr_flags && component.arr_flags.length > 0) {
+                if (query.arrFlag === 'true' && component.arr_flags && component.arr_flags.length > 0) { // 'true' as string from query
                     componentMatch = true;
                 }
-                if (query.riskFlag && component.risk_flags && component.risk_flags.length > 0) {
+                if (query.riskFlag === 'true' && component.risk_flags && component.risk_flags.length > 0) { // 'true' as string from query
                     componentMatch = true;
                 }
                 // General text search for Component (name, description, label)
@@ -233,7 +236,7 @@ const filterData = (query) => {
                                                   `${version.topology_diagram_link || ''} ${version.operational_guidelines_link || ''} ${version.base_config_source_link || ''} ` +
                                                   (version.standards_tags ? version.standards_tags.join(' ') : '') + ' ' +
                                                   (version.supported_capabilities ? version.supported_capabilities.join(' ') : '') + ' ' +
-                                                  (version.deployment_locations ? version.deployment_locations.map(loc => loc.site + ' ' + loc.zone + ' ' + loc.segment).join(' ') : '') + ' ' +
+                                                  (version.deployment_locations ? version.deployment_locations.map(loc => `${loc.site || ''} ${loc.zone || ''} ${loc.segment || ''} ${loc.country || ''}`).join(' ') : '') + ' ' + // NEW: Include country in search text
                                                   (version.observability_links ? version.observability_links.map(link => link.key + ' ' + link.value).join(' ') : '');
 
                     if (query.keyword && versionSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) {
@@ -251,13 +254,17 @@ const filterData = (query) => {
                     if (query.capability && version.supported_capabilities && version.supported_capabilities.some(cap => cap.toLowerCase().includes(query.capability.toLowerCase()))) {
                         versionMatch = true;
                     }
-                    if ((query.site || query.zone || query.segment) && version.deployment_locations && version.deployment_locations.some(loc => {
-                        const siteMatch = query.site ? loc.site.toLowerCase().includes(query.site.toLowerCase()) : true;
-                        const zoneMatch = query.zone ? loc.zone.toLowerCase().includes(query.zone.toLowerCase()) : true;
-                        const segmentMatch = query.segment ? loc.segment.toLowerCase().includes(query.segment.toLowerCase()) : true;
-                        return siteMatch && zoneMatch && segmentMatch;
-                    })) {
-                        versionMatch = true;
+                    // Filter by deployment_locations (site, zone, segment, country)
+                    if (query.site || query.zone || query.segment || query.country) { // NEW: Add query.country
+                        if (version.deployment_locations && version.deployment_locations.some(loc => {
+                            const siteMatch = query.site ? loc.site.toLowerCase().includes(query.site.toLowerCase()) : true;
+                            const zoneMatch = query.zone ? loc.zone.toLowerCase().includes(query.zone.toLowerCase()) : true;
+                            const segmentMatch = query.segment ? loc.segment.toLowerCase().includes(query.segment.toLowerCase()) : true;
+                            const countryMatch = query.country ? loc.country.toLowerCase().includes(query.country.toLowerCase()) : true; // NEW: Match country
+                            return siteMatch && zoneMatch && segmentMatch && countryMatch; // NEW: Include country in full match
+                        })) {
+                            versionMatch = true;
+                        }
                     }
                     if ((query.obsKey || query.obsValue) && version.observability_links && version.observability_links.some(link => {
                         const keyMatch = query.obsKey ? link.key.toLowerCase().includes(query.obsKey.toLowerCase()) : true;
@@ -276,8 +283,7 @@ const filterData = (query) => {
                 });
 
                 // If component (or any of its versions) matches, add it to the filtered results
-                // Conditionally include based on whether specific child queries were made or if component/version matched.
-                if (componentFilteredVersions.length > 0 || (componentMatch && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue'].includes(k)))) {
+                if (componentFilteredVersions.length > 0 || (componentMatch && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'country', 'obsKey', 'obsValue'].includes(k)))) { // NEW: Add country to key check
                     const clonedComponent = { ...component, component_versions: componentFilteredVersions };
                     filteredComponentsForCategory.push(clonedComponent);
                     entityMatch = true; // Category matches if an associated component matches
@@ -344,7 +350,7 @@ const filterData = (query) => {
             // This logic is designed to return a category if it matches a category-level query OR if any of its children match a child-level query.
             const hasCategorySpecificQueries = Object.keys(query).some(k => ['categoryName', 'categoryStatus'].includes(k));
             const hasChildSpecificQueries = Object.keys(query).some(k =>
-                ['componentName', 'componentType', 'componentLabel', 'version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue', 'keyword', 'customerName', 'customerOptionVersion', 'customerLifecycleStatus', 'customerGovernanceStatus', 'customerCapabilityRequired', 'optionName', 'pseudocodeKeyword', 'arrFlag', 'riskFlag'].includes(k)
+                ['componentName', 'componentType', 'componentLabel', 'version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'country', 'obsKey', 'obsValue', 'keyword', 'arrFlag', 'riskFlag', 'customerName', 'customerOptionVersion', 'customerLifecycleStatus', 'customerGovernanceStatus', 'customerCapabilityRequired', 'optionName', 'pseudocodeKeyword'].includes(k) // NEW: Add country to child queries
             );
 
             if (entityMatch || (hasCategorySpecificQueries && !hasChildSpecificQueries)) { // Match if entity itself matched OR if category-specific query used without child query
@@ -365,12 +371,12 @@ const filterData = (query) => {
             let componentMatchDirect = false;
             const componentFilteredVersions = [];
 
-            // Apply component-level filters (similar to above but for direct match)
+             // Apply component-level filters (similar to above but for direct match)
             if (query.componentName && entity.name.toLowerCase().includes(query.componentName.toLowerCase())) { componentMatchDirect = true; }
             if (query.componentType && entity.component_type.toLowerCase() === query.componentType.toLowerCase()) { componentMatchDirect = true; }
             if (query.componentLabel && entity.component_label.toLowerCase() === query.componentLabel.toLowerCase()) { componentMatchDirect = true; }
-            if (query.arrFlag && entity.arr_flags && entity.arr_flags.length > 0) { componentMatchDirect = true; }
-            if (query.riskFlag && entity.risk_flags && entity.risk_flags.length > 0) { componentMatchDirect = true; }
+            if (query.arrFlag === 'true' && entity.arr_flags && entity.arr_flags.length > 0) { componentMatchDirect = true; }
+            if (query.riskFlag === 'true' && entity.risk_flags && entity.risk_flags.length > 0) { componentMatchDirect = true; }
             const componentSearchableText = `${entity.name || ''} ${entity.description || ''} ${entity.component_type || ''} ${entity.component_label || ''}`;
             if (query.keyword && componentSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) { componentMatchDirect = true; }
             if (query.searchText && componentSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) { componentMatchDirect = true; }
@@ -385,17 +391,18 @@ const filterData = (query) => {
                                               `${version.topology_diagram_link || ''} ${version.operational_guidelines_link || ''} ${version.base_config_source_link || ''} ` +
                                               (version.standards_tags ? version.standards_tags.join(' ') : '') + ' ' +
                                               (version.supported_capabilities ? version.supported_capabilities.join(' ') : '') + ' ' +
-                                              (version.deployment_locations ? version.deployment_locations.map(loc => loc.site + ' ' + loc.zone + ' ' + loc.segment).join(' ') : '') + ' ' +
+                                              (version.deployment_locations ? version.deployment_locations.map(loc => `${loc.site || ''} ${loc.zone || ''} ${loc.segment || ''} ${loc.country || ''}`).join(' ') : '') + ' ' + // NEW: Include country in search text
                                               (version.observability_links ? version.observability_links.map(link => link.key + ' ' + link.value).join(' ') : '');
                 if (query.keyword && versionSearchableText.toLowerCase().includes(query.keyword.toLowerCase())) { versionMatch = true; }
                 if (query.searchText && versionSearchableText.toLowerCase().includes(query.searchText.toLowerCase())) { versionMatch = true; }
                 if (query.standardsTag && version.standards_tags && version.standards_tags.some(tag => tag.toLowerCase().includes(query.standardsTag.toLowerCase()))) { versionMatch = true; }
                 if (query.capability && version.supported_capabilities && version.supported_capabilities.some(cap => cap.toLowerCase().includes(query.capability.toLowerCase()))) { versionMatch = true; }
-                if ((query.site || query.zone || query.segment) && version.deployment_locations && version.deployment_locations.some(loc => {
+                if ((query.site || query.zone || query.segment || query.country) && version.deployment_locations && version.deployment_locations.some(loc => { // NEW: Add query.country
                     const siteMatch = query.site ? loc.site.toLowerCase().includes(query.site.toLowerCase()) : true;
                     const zoneMatch = query.zone ? loc.zone.toLowerCase().includes(query.zone.toLowerCase()) : true;
                     const segmentMatch = query.segment ? loc.segment.toLowerCase().includes(query.segment.toLowerCase()) : true;
-                    return siteMatch && zoneMatch && segmentMatch;
+                    const countryMatch = query.country ? loc.country.toLowerCase().includes(query.country.toLowerCase()) : true; // NEW: Match country
+                    return siteMatch && zoneMatch && segmentMatch && countryMatch; // NEW: Include country in full match
                 })) { versionMatch = true; }
                 if ((query.obsKey || query.obsValue) && version.observability_links && version.observability_links.some(link => {
                     const keyMatch = query.obsKey ? link.key.toLowerCase().includes(query.obsKey.toLowerCase()) : true;
@@ -409,7 +416,7 @@ const filterData = (query) => {
                 }
             });
 
-            if (componentFilteredVersions.length > 0 || (componentMatchDirect && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'obsKey', 'obsValue'].includes(k)))) {
+            if (componentFilteredVersions.length > 0 || (componentMatchDirect && Object.keys(query).every(k => !['version', 'lifecycleStatus', 'governanceStatus', 'searchText', 'standardsTag', 'capability', 'site', 'zone', 'segment', 'country', 'obsKey', 'obsValue'].includes(k)))) { // NEW: Add country to key check
                 const clonedComponent = { ...entity, component_versions: componentFilteredVersions };
                 // Only add if it's not already covered by a matching category
                 if (!results.some(r => r.type === "Category" && r.components && r.components.some(c => c.id === clonedComponent.id))) {
@@ -483,8 +490,8 @@ app.get(`/${appName}/`, (req, res) => {
 app.get(`/${appName}/category/:categoryId`, (req, res) => {
     const allData = readData();
     const category = allData.find(item => item.id === req.params.categoryId && item.type === "Category");
-    const allComponents = allData.filter(item => item.type === "Component"); // Pass all components for filtering in EJS
-    const allCustomerOptionSets = allData.filter(item => item.type === "CustomerOptionSet"); // Pass all customer options to EJS
+    const allComponents = allData.filter(item => item.type === "Component");
+    const allCustomerOptionSets = allData.filter(item => item.type === "CustomerOptionSet");
 
     if (!category) {
         return res.redirect(`/${appName}/?message=` + encodeURIComponent('Error: Category not found.'));
@@ -585,7 +592,7 @@ app.post(`/${appName}/add-component`, (req, res) => {
         name: req.body.name || 'New Component',
         description: req.body.description || '',
         component_type: req.body.component_type || 'service',
-        component_label: req.body.component_label || 'strategic', // Should align with new values
+        component_label: req.body.component_label || 'strategic',
         arr_flags: parseFlagLinks(req.body, 'arr_'), // Parse ARR flags
         risk_flags: parseFlagLinks(req.body, 'risk_'), // Parse Risk flags
         last_updated: new Date().toISOString(), // Add timestamp
